@@ -1,0 +1,10 @@
+{
+	"name": "sql-trasnformer",
+	"description": "Tester for SQL formatting VS Code extension",
+	"version": "0.0.1",
+	"publisher": "Roberto Rivera",
+	"repository": "https://github.com/roobyz/sql-transformer.git",
+	"scripts": {
+    "test": "node ./tests/extension-tester.js"
+	}
+}

@@ -70,7 +70,6 @@ class CustomQueue extends Array {
         }
     }
 
-
     /**
      * Returns the position of the given keyword in the previous line.
      * 
@@ -88,7 +87,6 @@ class CustomQueue extends Array {
         }
         return 0;
     }
-
 
     /**
      * Returns the current line's column position.
@@ -315,11 +313,6 @@ module.exports = function format(text) {
                         );
                     }
 
-
-
-
-
-
                     break;
                 case 'WITH':
                     stack.push(
@@ -457,8 +450,6 @@ module.exports = function format(text) {
 
                     break;
                 case 'AND':
-                    // formatted.pushItems(stack.peek())
-                    // formatted.pushItems('\n', stack.peek(), '*'.repeat(stack.getMargin() - 2));
                     if (stack.peek() === 'INLINE' && stack.peek(-1) === 'ON') {
                         formatted.pushItems('\n', '*'.repeat(stack.getMargin() - 2));
                     } else if (stack.peek() === 'INLINE' && stack.peek(-2) === 'ON') {
@@ -642,7 +633,7 @@ module.exports = function format(text) {
                 formatted.push(word);
             } else if (keyword === ')') { // parenthesis close
                 const popped = stack.pop();
-                
+
                 if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
                     stack.pop();
                 } else if (stack.peek() === 'ON') {

@@ -54,7 +54,8 @@
 		]
 	},
 	"scripts": {
-		"test": "node ./tests/extension-tester.js"
+		"test": "node ./tests/extension-tester.js",
+		"build": "vsce package"
 	},
 	"devDependencies": {
 		"@types/vscode": "^1.60.0"

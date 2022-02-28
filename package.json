@@ -1,10 +1,62 @@
 {
 	"name": "sql-trasnformer",
-	"description": "Tester for SQL formatting VS Code extension",
-	"version": "0.0.1",
-	"publisher": "Roberto Rivera",
-	"repository": "https://github.com/roobyz/sql-transformer.git",
+	"displayName": "SQL Transformer",
+	"description": "SQL Transformer/formatter to enhance clarity and productivity",
+	"version": "0.0.3",
+	"publisher": "roobyz",
+	"author": "Roberto <@robertoleap>",
+	"homepage": "https://marketplace.visualstudio.com/items?itemName=roobyz.sql-transformer",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/roobyz/sql-transformer"
+	},
+	"license": "Apache",
+	"bugs": {
+		"url": "https://github.com/roobyz/sql-transformer/issues"
+	},
+	"engines": {
+		"vscode": "^1.60.0"
+	},
+	"categories": [
+		"Formatters"
+	],
+	"keywords": [
+		"sql",
+		"transformer",
+		"formatter"
+	],
+	"activationEvents": [
+		"onCommand:roobyz.sqlTransformer"
+	],
+	"main": "./src/extension.js",
+	"contributes": {
+		"languages": [
+			{
+				"id": "sql",
+				"extensions": [
+					".sql"
+				]
+			}
+		],
+		"commands": [
+			{
+				"command": "roobyz.sqlTransformer",
+				"title": "%ext.command.sqlTransformer.format.title%"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "roobyz.sqlTransformer",
+				"key": "alt+shift+t",
+				"mac": "ctrl+shift+t",
+				"when": "editorFocus"
+			}
+		]
+	},
 	"scripts": {
-    "test": "node ./tests/extension-tester.js"
+		"test": "node ./tests/extension-tester.js"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.60.0"
 	}
 }

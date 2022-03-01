@@ -1,12 +1,13 @@
 -- 6.4.4
 
+create or replace table group.weather as
 select * from json_weather_data_view
 where date_trunc('month',observation_time) = '2018-01-01' 
 limit 20;
 
 -- 3.1.4
 
-create or replace table trips  
+create or replace table trips
 (tripduration integer,
   starttime timestamp,
   stoptime timestamp,
@@ -26,7 +27,7 @@ create or replace table trips
 
 -- 7.2.6
 
-select 
+select DISTINCT
 start_station_name as "station",
 count(*) as "rides"
 from trips t

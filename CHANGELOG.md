@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.0.6] - 2022-02-28
+### Changed
+- typo on extension name
+
 ## [0.0.5] - 2022-02-28
 ### Fixed
 - removed unused keyword (DISTINCT), which introduced a formatting bug

@@ -634,15 +634,17 @@ module.exports = function format(text) {
             } else if (keyword === ')') { // parenthesis close
                 const popped = stack.pop();
 
-                if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
-                    stack.pop();
-                } else if (stack.peek() === 'ON') {
-                    stack.pop();
-                } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
-                    formatted.pushItems('\n', ' '.repeat(5));
-                    stack.pop();
-                } else if (popped.type === 'INLINE') {
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
+                if (popped) {
+                    if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
+                        stack.pop();
+                    } else if (stack.peek() === 'ON') {
+                        stack.pop();
+                    } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
+                        formatted.pushItems('\n', ' '.repeat(5));
+                        stack.pop();
+                    } else if (popped.type === 'INLINE') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
+                    }
                 }
                 formatted.push(word);
             }

@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.0.7] - 2022-03-01
+### Fixed
+- add check for undefined type on create or replace table statement
+
+
 ## [0.0.6] - 2022-02-28
 ### Changed
 - typo on extension name

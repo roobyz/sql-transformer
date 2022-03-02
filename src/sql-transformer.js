@@ -241,7 +241,9 @@ module.exports = function format(text) {
 
         if (isReservedWord(word)) {
             keyword = word.toUpperCase();
+
         } else {
+
             keyword = '';
         }
 
@@ -261,14 +263,19 @@ module.exports = function format(text) {
             } else if (keyword === '*/') {
                 // End comment block
                 stack.pop();
+
                 formatted.pushItems(' ', word);
+                
                 if (stack.getMargin() === 0 && peekNextKeyword(tokens, 'SELECT')) {
                     formatted.pushItems('\n');
                 }
+
             } else {
                 // In-comment
                 formatted.pushItems(' ', word);
+
             }
+            
             continue;
         }
 
@@ -327,11 +334,14 @@ module.exports = function format(text) {
                             // pass
                         } else if (last_word == ')' && stack.peek(-1) === 'SELECT' || stack.peek(-2) === 'SELECT') {
                             formatted.pushItems('\n/* Outcome */\n', ' '.repeat(stack.getMargin()));
+
                         } else {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
                         }
                     } else {
                         formatted.pushItems(' '.repeat(stack.getMargin()));
+
                     }
 
                     break;
@@ -353,6 +363,7 @@ module.exports = function format(text) {
                             margin: 0
                         }
                     );
+
                     formatted.push('\n');
 
                     break;
@@ -360,8 +371,10 @@ module.exports = function format(text) {
                     stack.pop();
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 6));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+
                     }
 
                     break;
@@ -372,6 +385,7 @@ module.exports = function format(text) {
                             margin: 0
                         }
                     );
+
                     break;
                 case 'INTO':
                     formatted.push(' ');
@@ -388,30 +402,37 @@ module.exports = function format(text) {
                             margin: 0
                         }
                     );
+
                     formatted.push('\n');
 
                     break;
                 case 'LEFT':
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 3));
+
                     }
 
                     break;
                 case 'RIGHT':
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 0));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 4));
+
                     }
 
                     break;
                 case 'FULL':
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 3));
+
                     }
 
                     break;
@@ -431,19 +452,24 @@ module.exports = function format(text) {
                     if (stack.peek() === 'ON') {
                         stack.pop();
                     }
+
                     stack.push(
                         {
                             type: 'JOIN',
                             margin: 2
                         }
                     );
+
                     if (['LEFT', 'RIGHT', 'FULL'].includes(last_word)) {
                         formatted.push(' ');
+
                     } else {
                         if (stack.getMargin() === 2) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
+
                         } else {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
                         }
                     }
 
@@ -452,48 +478,61 @@ module.exports = function format(text) {
                     if (stack.peek() === 'JOIN') {
                         stack.pop();
                     }
+
                     stack.push(
                         {
                             type: 'ON',
                             margin: 4
                         }
                     );
+
                     if (stack.getMargin() === 4) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
                     }
 
                     break;
                 case 'WHERE':
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 5));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
+
                     }
 
                     break;
                 case 'LIMIT':
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 5));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
                     }
 
                     break;
                 case 'AND':
                     if (stack.peek() === 'INLINE' && stack.peek(-1) === 'ON') {
                         formatted.pushItems('\n', '*'.repeat(stack.getMargin() - 2));
+
                     } else if (stack.peek() === 'INLINE' && stack.peek(-2) === 'ON') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 5));
+                        
                     } else if (stack.peek() === 'CASE') {
                         formatted.push(' ');
+
                     } else if (stack.peek() === 'BETWEEN') {
                         formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('BETWEEN') + 4));
+
                         stack.pop();
                     } else {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 7));
+
                         } else {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 3));
                         }
@@ -504,6 +543,7 @@ module.exports = function format(text) {
                     if (last_keyword !== '(') {
                         formatted.push(' ');
                     }
+
                     stack.push(
                         {
                             type: 'CASE',
@@ -515,8 +555,10 @@ module.exports = function format(text) {
                 case 'WHEN':
                     if (last_word === 'CASE') {
                         formatted.push(' ');
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
+
                     }
 
                     break;
@@ -548,6 +590,7 @@ module.exports = function format(text) {
                             margin: 0
                         }
                     );
+
                     formatted.push(' ');
 
                     break;
@@ -558,10 +601,13 @@ module.exports = function format(text) {
                             margin: 0
                         }
                     );
+
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 2));
+
                     }
 
                     break;
@@ -572,10 +618,13 @@ module.exports = function format(text) {
                             margin: 0
                         }
                     );
+
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 2));
+
                     }
 
                     break;
@@ -590,6 +639,7 @@ module.exports = function format(text) {
             if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
                 last_keyword = keyword;
             }
+
             last_word = word.toUpperCase();
             continue;
         }
@@ -607,7 +657,6 @@ module.exports = function format(text) {
             }
             last_keyword = 'AND';
             last_word = 'AND';
-            // formatted.pushItems('-->',stack.peek(), '<--');
         }
 
         //
@@ -705,6 +754,7 @@ module.exports = function format(text) {
                     break;
 
             }
+
             // don't forget to update last keyword
             if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
                 last_keyword = keyword;
@@ -714,33 +764,40 @@ module.exports = function format(text) {
             continue;
         }
 
-
-
         //  Process identifiers, expressions, .. etc.
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT'].includes(last_word)) {
             formatted.push(' ');
+
         } else if (stack.peek() === 'SELECT') {
             // column identifier
             if (keyword === ',') {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
             }
+
             formatted.push(' ');
+
         } else if (['INSERT', 'VALUES'].includes(stack.peek(-2))) {
             // column identifier
             if (keyword === ',') {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 3));
             }
+
             formatted.push(' ');
+
         } else if (last_word === 'FROM') { // table identifier
             formatted.push(' ');
+
         } else if (['WHERE', 'AND', 'BETWEEN', 'WHEN', 'THEN', 'ELSE',
             'AS', 'END', 'HAVING', ')', 'INTO', 'OVERWRITE'].includes(last_keyword)) {
             formatted.push(' ');
+
         } else if (stack.peek() === 'ON') {
             if (peekNextKeyword(tokens, 'AND')) {
                 stack.pop();
             }
+            
             formatted.push(' ');
+
         } else if (stack.peek() === 'INLINE') {
             // formatted.pushItems('\n *sp-2* ', stack.peek(-2));
             if (stack.peek(-1) === 'CREATE') {
@@ -762,10 +819,12 @@ module.exports = function format(text) {
                 if (peekNextKeyword(tokens) !== ',') {
                     stack.pop();
                 }
+
             }
         } else if (['FUNCTION'].includes(stack.peek())) {
             if (last_word === ',') {
                 formatted.push(' ');
+
             }
             // do not append any whitespaces
         } else if (['ATTRIBUTES'].includes(stack.peek())) {
@@ -773,8 +832,10 @@ module.exports = function format(text) {
                 formatted.push(' ');
             } else if (last_word === '(') {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+
             } else {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
             }
 
         } else {
@@ -783,22 +844,24 @@ module.exports = function format(text) {
                 // pass
             } else {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
             }
         }
 
-
-
-
         if (word === ';') {
             formatted.push('\n;\n\n');
+
         } else {
             formatted.push(word);
+
         }
 
         // don't forget to update last keyword
         if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
             last_keyword = keyword;
+
         }
+
         last_word = word.toUpperCase();
     }
 

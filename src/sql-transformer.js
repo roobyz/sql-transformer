@@ -605,6 +605,9 @@ module.exports = function format(text) {
                     formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 2), ' AND');
                 }
             }
+            last_keyword = 'AND';
+            last_word = 'AND';
+            // formatted.pushItems('-->',stack.peek(), '<--');
         }
 
         //
@@ -619,9 +622,11 @@ module.exports = function format(text) {
                 case '(':
                     if (last_keyword === 'JOIN') {
                         // pass
-                    } else if (stack.peek(-1) === 'CREATE') {
-                        formatted.push(' ');
                     } else if (last_keyword === 'IN') {
+                        formatted.push(' ');
+                    } else if (last_keyword === 'AND') {
+                        // formatted.push(stack.peek());
+                    } else if (stack.peek(-1) === 'CREATE') {
                         formatted.push(' ');
                     } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
                         formatted.pushItems('\n', ' '.repeat(5));
@@ -630,12 +635,14 @@ module.exports = function format(text) {
                     // Define the type of stack
                     if (word === '(') {
                         if (stack.peek() === 'CREATE') {
-                            stack.push(
-                                {
-                                    type: 'ATTRIBUTES',
-                                    margin: 0
-                                }
-                            )
+                            if (last_keyword === 'CREATE') {
+                                stack.push(
+                                    {
+                                        type: 'ATTRIBUTES',
+                                        margin: 0
+                                    }
+                                )
+                            }
                         } else {
                             stack.push(
                                 {
@@ -645,6 +652,7 @@ module.exports = function format(text) {
                             );
                         }
                     }
+                    // formatted.push('-->', last_keyword, '-', last_word);
 
                     if (peekNextKeyword(tokens) === 'SELECT') {
                         formatted.push(' ');

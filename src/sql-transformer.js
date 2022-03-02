@@ -255,7 +255,9 @@ module.exports = function format(text) {
                         margin: 0
                     }
                 );
+
                 formatted.pushItems(' ', word);
+
             } else if (keyword === '*/') {
                 // End comment block
                 stack.pop();
@@ -266,6 +268,36 @@ module.exports = function format(text) {
             } else {
                 // In-comment
                 formatted.pushItems(' ', word);
+            }
+            continue;
+        }
+
+        if (['{{', '}}', '{%', '%}'].includes(keyword) || stack.peek() === 'JINJA') {
+            if (['{{', '{%'].includes(keyword)) {
+                // Start JINJA block
+                stack.push(
+                    {
+                        type: 'JINJA',
+                        margin: 0
+                    }
+                );
+
+                formatted.pushItems(' ', word, ' ');
+
+            } else if (['}}', '%}'].includes(keyword)) {
+                // End JINJA block
+                stack.pop();
+                formatted.pushItems(' ', word);
+
+            } else {
+                // In-JINJA
+                if (word === ',') {
+                    formatted.pushItems(word, ' ');
+
+                } else {
+                    formatted.pushItems(word);
+
+                }
             }
             continue;
         }
@@ -555,7 +587,7 @@ module.exports = function format(text) {
             formatted.push(word.toUpperCase());
 
             // Record the last keyword that is not a comment
-            if (isReservedWord(word) && !['/*', '*/'].includes(word)) {
+            if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
                 last_keyword = keyword;
             }
             last_word = word.toUpperCase();
@@ -575,93 +607,109 @@ module.exports = function format(text) {
             }
         }
 
+        //
         if (['OVER'].includes(last_word)) {
             formatted.push(' ');
         }
 
-        //  Process parenthesis.
-        if (['(', ')'].includes(keyword)) {
-            if (keyword === '(') { // parenthesis open
-                if (last_keyword === 'JOIN') {
-                    // formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 1));
-                } else if (stack.peek(-1) === 'CREATE') {
-                    formatted.push(' ');
-                } else if (last_keyword === 'IN') {
-                    formatted.push(' ');
-                } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
-                    formatted.pushItems('\n', ' '.repeat(5));
-                }
-
-                if (stack.peek() === 'CREATE' && word === '(') {
-                    stack.push(
-                        {
-                            type: 'ATTRIBUTES',
-                            margin: 0
-                        }
-                    )
-                };
-                if (stack.peek() !== 'ATTRIBUTES') {
-                    stack.push(
-                        {
-                            type: 'INLINE',
-                            margin: formatted.getCurrentPosition() - stack.getMargin() + 2
-                        }
-                    );
-                }
-
-                if (peekNextKeyword(tokens) === 'SELECT') { // select clause
-                    formatted.push(' ');
-                } else if (last_keyword === 'ON') { // on clause
-                    formatted.push(' ');
-                } else if (['INSERT', 'VALUES'].includes(stack.peek(-2))) {
-                    // pass
-                } else if (stack.peek() === 'ATTRIBUTES') {
-                    if (['('].includes(last_word)) {
-                        formatted.push('\n ');
-                    }
-                } else { // function
-                    if (stack.peek() !== 'ATTRIBUTES') {
-                        stack.push(
-                            {
-                                type: 'FUNCTION',
-                                margin: 0
-                            }
-                        );
-                    }
-                    // do not append any whitespaces
-                }
-                formatted.push(word);
-            } else if (keyword === ')') { // parenthesis close
-                const popped = stack.pop();
-
-                if (popped) {
-                    if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
-                        stack.pop();
-                    } else if (stack.peek() === 'ON') {
-                        stack.pop();
+        //  Process stack blocks and store last words
+        if (['(', ')'].includes(keyword) && stack.peek() !== 'JINJA') {
+            switch (keyword) {
+                // Open new block
+                case '(':
+                    if (last_keyword === 'JOIN') {
+                        // pass
+                    } else if (stack.peek(-1) === 'CREATE') {
+                        formatted.push(' ');
+                    } else if (last_keyword === 'IN') {
+                        formatted.push(' ');
                     } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
                         formatted.pushItems('\n', ' '.repeat(5));
-                        stack.pop();
-                    } else if (popped.type === 'INLINE') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
                     }
-                }
-                formatted.push(word);
-            }
 
+                    // Define the type of stack
+                    if (word === '(') {
+                        if (stack.peek() === 'CREATE') {
+                            stack.push(
+                                {
+                                    type: 'ATTRIBUTES',
+                                    margin: 0
+                                }
+                            )
+                        } else {
+                            stack.push(
+                                {
+                                    type: 'INLINE',
+                                    margin: formatted.getCurrentPosition() - stack.getMargin() + 2
+                                }
+                            );
+                        }
+                    }
+
+                    if (peekNextKeyword(tokens) === 'SELECT') {
+                        formatted.push(' ');
+                    } else if (last_keyword === 'ON') {
+                        if (stack.peek() === 'INLINE') {
+                            // pass
+                        } else if (last_word === 'ON') {
+                            formatted.push(' ');
+                        } else {
+                            formatted.push(' ');
+                        }
+                    } else if (['INSERT', 'VALUES'].includes(stack.peek(-2))) {
+                        // pass
+                    } else if (stack.peek() === 'ATTRIBUTES') {
+                        if (['('].includes(last_word)) {
+                            formatted.push('\n ');
+                        }
+                    } else { // function
+                        if (stack.peek() !== 'ATTRIBUTES') {
+                            stack.push(
+                                {
+                                    type: 'FUNCTION',
+                                    margin: 0
+                                }
+                            );
+                        }
+                        // do not append any whitespaces
+                    }
+                    formatted.push(word);
+
+                    break;
+                // Close existing block
+                case ')':
+                    const popped = stack.pop();
+
+                    if (popped) {
+                        if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
+                            stack.pop();
+                        } else if (stack.peek() === 'ON') {
+                            stack.pop();
+                        } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
+                            formatted.pushItems('\n', ' '.repeat(5));
+                            stack.pop();
+                        } else if (popped.type === 'INLINE') {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
+                        }
+                    }
+                    formatted.push(word);
+
+                    break;
+
+            }
             // don't forget to update last keyword
-            if (isReservedWord(word) && !['/*', '*/'].includes(word)) {
+            if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
                 last_keyword = keyword;
             }
+
             last_word = word.toUpperCase();
             continue;
         }
 
+
+
         //  Process identifiers, expressions, .. etc.
-        if (last_word === 'SELECT') {
-            // first column identifier
-            formatted.push(' ');
-        } else if (['CREATE', 'FROM', 'JOIN', 'LIMIT'].includes(last_word)) { // table identifier
+        if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT'].includes(last_word)) {
             formatted.push(' ');
         } else if (stack.peek() === 'SELECT') {
             // column identifier
@@ -685,10 +733,19 @@ module.exports = function format(text) {
                 stack.pop();
             }
             formatted.push(' ');
-        } else if (stack.peek() === 'INLINE' && stack.peek(-2) === 'ON') {
-            if (last_word !== '(') {
-                formatted.push(' ');
+        } else if (stack.peek() === 'INLINE') {
+            // formatted.pushItems('\n *sp-2* ', stack.peek(-2));
+            if (stack.peek(-1) === 'CREATE') {
+                if (keyword === ',') {
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+                }
             }
+            if (stack.peek(-2) === 'ON') {
+                if (last_word !== '(') {
+                    formatted.push(' ');
+                }
+            }
+
         } else if (stack.peek() === 'BY') {
             if (keyword === ',') {
                 // pass
@@ -698,11 +755,6 @@ module.exports = function format(text) {
                     stack.pop();
                 }
             }
-        } else if (stack.peek() === 'INLINE' && stack.peek(-1) === 'CREATE') {
-            if (keyword === ',') {
-                formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
-            }
-
         } else if (['FUNCTION'].includes(stack.peek())) {
             if (last_word === ',') {
                 formatted.push(' ');
@@ -726,6 +778,9 @@ module.exports = function format(text) {
             }
         }
 
+
+
+
         if (word === ';') {
             formatted.push('\n;\n\n');
         } else {
@@ -733,7 +788,7 @@ module.exports = function format(text) {
         }
 
         // don't forget to update last keyword
-        if (isReservedWord(word) && !['/*', '*/'].includes(word)) {
+        if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
             last_keyword = keyword;
         }
         last_word = word.toUpperCase();

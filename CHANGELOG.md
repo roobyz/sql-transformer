@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.1] - 2022-03-01
+### Changed
+- updated README.md typo
+  
 ## [0.1.0] - 2022-03-01
 ### Fixed
 - updated to support "create table as select" queries

@@ -6,7 +6,7 @@ Transform your SQL!
 
 `SQL Transformer` makes SQL code more organized and readable. Heavy focus was made on improving developer productivity and clarity. It works with common table expressions (CTEs) as well as complicated inline SQL.
 
-The code is heaving commented in case you are eager to understand how it works, or want to make updates or contributions.
+The code is heavily commented in case you are eager to understand how it works, or want to make updates or contributions.
 
 ## Usage
 

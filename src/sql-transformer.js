@@ -232,6 +232,15 @@ module.exports = function format(text) {
     const stack = new CustomArray();
     const formatted = new CustomQueue();
 
+    function setStack(name, size) {
+        stack.push(
+            {
+                type: name,
+                margin: size
+            }
+        )
+    }
+
     let keyword = '';
     let last_word = '';
     let last_keyword = '';
@@ -243,7 +252,6 @@ module.exports = function format(text) {
             keyword = word.toUpperCase();
 
         } else {
-
             keyword = '';
         }
 
@@ -251,13 +259,7 @@ module.exports = function format(text) {
         if (['/*', '*/'].includes(keyword) || stack.peek() === 'COMMENT') {
             if (keyword === '/*') {
                 // Start comment block
-                stack.push(
-                    {
-                        type: 'COMMENT',
-                        margin: 0
-                    }
-                );
-
+                setStack('COMMENT', 0)
                 formatted.pushItems(' ', word);
 
             } else if (keyword === '*/') {
@@ -265,7 +267,7 @@ module.exports = function format(text) {
                 stack.pop();
 
                 formatted.pushItems(' ', word);
-                
+
                 if (stack.getMargin() === 0 && peekNextKeyword(tokens, 'SELECT')) {
                     formatted.pushItems('\n');
                 }
@@ -275,20 +277,14 @@ module.exports = function format(text) {
                 formatted.pushItems(' ', word);
 
             }
-            
+
             continue;
         }
 
         if (['{{', '}}', '{%', '%}'].includes(keyword) || stack.peek() === 'JINJA') {
             if (['{{', '{%'].includes(keyword)) {
                 // Start JINJA block
-                stack.push(
-                    {
-                        type: 'JINJA',
-                        margin: 0
-                    }
-                );
-
+                setStack('JINJA', 0)
                 formatted.pushItems(' ', word, ' ');
 
             } else if (['}}', '%}'].includes(keyword)) {
@@ -315,19 +311,9 @@ module.exports = function format(text) {
             switch (keyword) {
                 case 'SELECT':
                     if (stack.getMargin() < 4) {
-                        stack.push(
-                            {
-                                type: 'SELECT',
-                                margin: 4
-                            }
-                        );
+                        setStack('SELECT', 4)
                     } else {
-                        stack.push(
-                            {
-                                type: 'SELECT',
-                                margin: 0
-                            }
-                        );
+                        setStack('SELECT', 0)
                     }
                     if (last_word) {
                         if (last_word == '(') {
@@ -347,23 +333,12 @@ module.exports = function format(text) {
                     break;
                 case 'CREATE':
                     if (stack.getMargin() === 0) {
-                        stack.push(
-                            {
-                                type: 'CREATE',
-                                margin: 4
-                            }
-                        );
+                        setStack('CREATE', 4)
                     }
 
                     break;
                 case 'WITH':
-                    stack.push(
-                        {
-                            type: 'WITH',
-                            margin: 0
-                        }
-                    );
-
+                    setStack('WITH', 0)
                     formatted.push('\n');
 
                     break;
@@ -379,12 +354,7 @@ module.exports = function format(text) {
 
                     break;
                 case 'INSERT':
-                    stack.push(
-                        {
-                            type: 'INSERT',
-                            margin: 0
-                        }
-                    );
+                    setStack('INSERT', 0)
 
                     break;
                 case 'INTO':
@@ -396,13 +366,7 @@ module.exports = function format(text) {
 
                     break;
                 case 'VALUES':
-                    stack.push(
-                        {
-                            type: 'VALUES',
-                            margin: 0
-                        }
-                    );
-
+                    setStack('VALUES', 0)
                     formatted.push('\n');
 
                     break;
@@ -453,12 +417,7 @@ module.exports = function format(text) {
                         stack.pop();
                     }
 
-                    stack.push(
-                        {
-                            type: 'JOIN',
-                            margin: 2
-                        }
-                    );
+                    setStack('JOIN', 2)
 
                     if (['LEFT', 'RIGHT', 'FULL'].includes(last_word)) {
                         formatted.push(' ');
@@ -469,7 +428,6 @@ module.exports = function format(text) {
 
                         } else {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
-
                         }
                     }
 
@@ -479,12 +437,7 @@ module.exports = function format(text) {
                         stack.pop();
                     }
 
-                    stack.push(
-                        {
-                            type: 'ON',
-                            margin: 4
-                        }
-                    );
+                    setStack('ON', 4)
 
                     if (stack.getMargin() === 4) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
@@ -517,11 +470,11 @@ module.exports = function format(text) {
                     break;
                 case 'AND':
                     if (stack.peek() === 'INLINE' && stack.peek(-1) === 'ON') {
-                        formatted.pushItems('\n', '*'.repeat(stack.getMargin() - 2));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 2));
 
                     } else if (stack.peek() === 'INLINE' && stack.peek(-2) === 'ON') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 5));
-                        
+
                     } else if (stack.peek() === 'CASE') {
                         formatted.push(' ');
 
@@ -544,12 +497,7 @@ module.exports = function format(text) {
                         formatted.push(' ');
                     }
 
-                    stack.push(
-                        {
-                            type: 'CASE',
-                            margin: formatted.getCurrentPosition() - stack.getMargin() + 1
-                        }
-                    );
+                    setStack('CASE', formatted.getCurrentPosition() - stack.getMargin() + 1)
 
                     break;
                 case 'WHEN':
@@ -584,23 +532,12 @@ module.exports = function format(text) {
 
                     break;
                 case 'BETWEEN':
-                    stack.push(
-                        {
-                            type: 'BETWEEN',
-                            margin: 0
-                        }
-                    );
-
+                    setStack('BETWEEN', 0)
                     formatted.push(' ');
 
                     break;
                 case 'GROUP BY':
-                    stack.push(
-                        {
-                            type: 'BY',
-                            margin: 0
-                        }
-                    );
+                    setStack('BY', 0)
 
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
@@ -612,12 +549,7 @@ module.exports = function format(text) {
 
                     break;
                 case 'ORDER BY':
-                    stack.push(
-                        {
-                            type: 'BY',
-                            margin: 0
-                        }
-                    );
+                    setStack('BY', 0)
 
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
@@ -685,20 +617,10 @@ module.exports = function format(text) {
                     if (word === '(') {
                         if (stack.peek() === 'CREATE') {
                             if (last_keyword === 'CREATE') {
-                                stack.push(
-                                    {
-                                        type: 'ATTRIBUTES',
-                                        margin: 0
-                                    }
-                                )
+                                setStack('ATTRIBUTES', 0)
                             }
                         } else {
-                            stack.push(
-                                {
-                                    type: 'INLINE',
-                                    margin: formatted.getCurrentPosition() - stack.getMargin() + 2
-                                }
-                            );
+                            setStack('INLINE', formatted.getCurrentPosition() - stack.getMargin() + 2)
                         }
                     }
                     // formatted.push('-->', last_keyword, '-', last_word);
@@ -721,12 +643,7 @@ module.exports = function format(text) {
                         }
                     } else { // function
                         if (stack.peek() !== 'ATTRIBUTES') {
-                            stack.push(
-                                {
-                                    type: 'FUNCTION',
-                                    margin: 0
-                                }
-                            );
+                            setStack('FUNCTION', 0)
                         }
                         // do not append any whitespaces
                     }
@@ -795,7 +712,7 @@ module.exports = function format(text) {
             if (peekNextKeyword(tokens, 'AND')) {
                 stack.pop();
             }
-            
+
             formatted.push(' ');
 
         } else if (stack.peek() === 'INLINE') {

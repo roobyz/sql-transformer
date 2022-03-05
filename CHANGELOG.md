@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.3] - 2022-03-05
+### Added
+- support for math operators
+- support for Snowflake cast operator
+
+### Fixed
+- Included OR keyword logic for create table/view
+  
 ## [0.1.2] - 2022-03-04
 ### Changed
 - Refactored stack.push to make it more "DRY"

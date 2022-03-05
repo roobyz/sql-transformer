@@ -13,7 +13,7 @@
 // Why:  use keywords to process SQL blocks and assign to stack when needed
 // ----------------------------------------------------------------------------
 const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
-
+const owords = ['::', '/', '*', '+', '-', '%']
 const rwords = [...kwords, ';', '(', ')', ',', '{{', '}}', '{%', '%}', '/*', '*/'];
 
 // ----------------------------------------------------------------------------
@@ -114,6 +114,17 @@ function isReservedWord(word) {
      * @returns {Boolean}
      */
     return rwords.includes(word.toUpperCase());
+}
+
+function isOperater(word) {
+    let shouldSkip = false;
+    owords.forEach(operator => {
+        if (word.includes(operator)) {
+            shouldSkip = true;
+            return shouldSkip;
+        }
+    });
+    return shouldSkip;
 }
 
 function peekNextWord(tokens) {
@@ -603,7 +614,7 @@ module.exports = function format(text) {
             last_word = 'AND';
         }
 
-        //
+
         if (['OVER'].includes(last_word)) {
             formatted.push(' ');
         }
@@ -628,17 +639,18 @@ module.exports = function format(text) {
                     // Define the type of stack
                     if (word === '(') {
                         if (stack.peek() === 'CREATE') {
-                            if (last_keyword === 'CREATE') {
+                            if (['CREATE', 'OR', 'REPLACE'].includes(last_keyword)) {
                                 setStack('ATTRIBUTES', 0)
                             }
                         } else {
                             setStack('INLINE', formatted.getCurrentPosition() - stack.getMargin() + 2)
                         }
                     }
-                    // formatted.push('-->', last_keyword, '-', last_word);
+                    // formatted.push('->', stack.peek(), '<-');
 
                     if (peekNextKeyword(tokens) === 'SELECT') {
                         formatted.push(' ');
+
                     } else if (last_keyword === 'ON') {
                         if (stack.peek() === 'INLINE') {
                             // pass
@@ -647,12 +659,14 @@ module.exports = function format(text) {
                         } else {
                             formatted.push(' ');
                         }
+
                     } else if (['INSERT', 'VALUES'].includes(stack.peek(-2))) {
                         // pass
                     } else if (stack.peek() === 'ATTRIBUTES') {
                         if (['('].includes(last_word)) {
                             formatted.push('\n ');
                         }
+
                     } else { // function
                         if (stack.peek() !== 'ATTRIBUTES') {
                             setStack('FUNCTION', 0)
@@ -703,7 +717,12 @@ module.exports = function format(text) {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
             }
 
-            formatted.push(' ');
+            // assess operators
+            if (isOperater(word) && last_keyword !== ',') {
+                // pass
+            } else {
+                formatted.push(' ');
+            }
 
         } else if (['INSERT', 'VALUES'].includes(stack.peek(-2))) {
             // column identifier
@@ -728,7 +747,6 @@ module.exports = function format(text) {
             formatted.push(' ');
 
         } else if (stack.peek() === 'INLINE') {
-            // formatted.pushItems('\n *sp-2* ', stack.peek(-2));
             if (stack.peek(-1) === 'CREATE') {
                 if (keyword === ',') {
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
@@ -759,6 +777,7 @@ module.exports = function format(text) {
         } else if (['ATTRIBUTES'].includes(stack.peek())) {
             if (last_word === ',') {
                 formatted.push(' ');
+
             } else if (last_word === '(') {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
 

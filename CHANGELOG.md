@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.2] - 2022-03-04
+### Changed
+- Refactored stack.push to make it more "DRY"
+- Added "OR" keyword
+  
 ## [0.1.1] - 2022-03-01
 ### Changed
 - updated README.md typo

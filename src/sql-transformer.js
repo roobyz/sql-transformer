@@ -12,7 +12,7 @@
 // What: array of SQL keywords
 // Why:  use keywords to process SQL blocks and assign to stack when needed
 // ----------------------------------------------------------------------------
-const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
+const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
 
 const rwords = [...kwords, ';', '(', ')', ',', '{{', '}}', '{%', '%}', '/*', '*/'];
 
@@ -458,6 +458,15 @@ module.exports = function format(text) {
                     }
 
                     break;
+                case 'OR':
+                    if (stack.peek() === 'FUNCTION') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 4));
+
+                    } else {
+                        formatted.push(' ');
+                    }
+
+                    break;
                 case 'LIMIT':
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 5));
@@ -578,9 +587,12 @@ module.exports = function format(text) {
 
         // Add where 1=1, if not included
         if (last_word === 'WHERE') {
-            if (word.replace(/ /g, '') === '1=1') {
-                // skip
+            if (['1=1', '1=1AND'].includes(word.replace(/ /g, ''))) {
+                if (['1=1AND'].includes(word.replace(/ /g, ''))) {
+                    continue
+                }
             } else {
+                // formatted.pushItems('-->', word.replace(/ /g, ''), '<--');
                 if (stack.getMargin() === 0) {
                     formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 6), ' AND');
                 } else {
@@ -682,7 +694,7 @@ module.exports = function format(text) {
         }
 
         //  Process identifiers, expressions, .. etc.
-        if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT'].includes(last_word)) {
+        if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR'].includes(last_word)) {
             formatted.push(' ');
 
         } else if (stack.peek() === 'SELECT') {

@@ -10,13 +10,23 @@
 
 // ----------------------------------------------------------------------------
 // What: array of SQL keywords
-// Why:  use keywords to process SQL blocks and assign to stack when needed
-// ----------------------------------------------------------------------------
+// Why:  use keywords to procecss SQL blocks and assign to stack when needed
 const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
+// ----------------------------------------------------------------------------
+// What: operators
 const owords = ['::', '/', '*', '+', '-', '%']
+// ----------------------------------------------------------------------------
+// What: comments
 const cwords = ['/*', '*/', '{#', '#}']
-const jwords = ['{{', '}}', '{%', '%}']
-const rwords = [...kwords,...cwords,...jwords, ';', '(', ')', ','];
+// ----------------------------------------------------------------------------
+// What: Jinja brackets for DBT
+const dwords = ['{{', '}}', '{%', '%}']
+// ----------------------------------------------------------------------------
+// What: punctuation
+const pwords = [';', '(', ')', ',']
+// ----------------------------------------------------------------------------
+// What: reserved words
+const rwords = [...kwords, ...cwords, ...dwords, ...pwords];
 
 // ----------------------------------------------------------------------------
 // What: Array class for processing the stack of SQL blocks
@@ -257,6 +267,7 @@ module.exports = function format(text) {
     let keyword = '';
     let last_word = '';
     let last_keyword = '';
+    let from_block = '';
     let last_comment = '';
 
     while (tokens.length) {
@@ -270,18 +281,18 @@ module.exports = function format(text) {
         }
 
         //  Process comment blocks.
-        if (['/*', '*/'].includes(keyword) || stack.peek() === 'COMMENT') {
-            if (keyword === '/*') {
+        if (cwords.includes(keyword) || stack.peek() === 'COMMENT') {
+            if (['/*', '{#'].includes(keyword)) {
                 // Start comment block
                 setStack('COMMENT', 0)
                 if (peekNextWord(tokens) === 'OUTCOME') {
                     formatted.pushItems('\n', word);
                     last_comment = 'OUTCOME'
                 } else {
-                    formatted.pushItems(' ', word);
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
                 }
 
-            } else if (keyword === '*/') {
+            } else if (['*/', '#}'].includes(keyword)) {
                 // End comment block
                 stack.pop();
 
@@ -300,25 +311,53 @@ module.exports = function format(text) {
             continue;
         }
 
-        if (['{{', '}}', '{%', '%}'].includes(keyword) || stack.peek() === 'JINJA') {
-            if (['{{', '{%'].includes(keyword)) {
+        if (dwords.includes(keyword) || stack.peek() === 'JINJA') {
+            if (['{%'].includes(keyword)) {
                 // Start JINJA block
-                setStack('JINJA', 0)
-                formatted.pushItems(' ', word, ' ');
+                setStack('JINJA', 4)
 
-            } else if (['}}', '%}'].includes(keyword)) {
+                if (keyword === '{%') {
+                    formatted.pushItems('\n\n', ' '.repeat(stack.getMargin(-12)), word, ' ');
+                } else {
+                    formatted.pushItems(' ', word, ' ');
+                }
+
+            } else if (['{{'].includes(keyword)) {
+                if (last_word === 'WHERE') {
+                    if (['1=1', '1=1AND'].includes(word.replace(/ /g, ''))) {
+                        if (['1=1AND'].includes(word.replace(/ /g, ''))) {
+                            continue
+                        }
+                    } else {
+                        if (stack.getMargin() === 0) {
+                            formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 6), ' AND');
+                        } else {
+                            formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 2), ' AND');
+                        }
+                    }
+                    last_keyword = 'AND';
+                    last_word = 'AND';
+                }
+
+                formatted.pushItems(' ', word);
+
+            } else if (['}}'].includes(keyword)) {
+                formatted.pushItems(' ', word);
+
+            } else if (['%}'].includes(keyword)) {
                 // End JINJA block
                 stack.pop();
                 formatted.pushItems(' ', word);
+                formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
 
             } else {
                 // In-JINJA
                 if (word === ',') {
                     formatted.pushItems(word, ' ');
-
+                } else if (keyword === '{%') {
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin()), word);
                 } else {
-                    formatted.pushItems(word);
-
+                    formatted.pushItems(' ', word);
                 }
             }
             continue;
@@ -370,9 +409,12 @@ module.exports = function format(text) {
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 6));
 
+                    } else if (stack.getMargin() === 4 && from_block === '(') {
+                        setStack('SELECT', 8)
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+                        
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
-
                     }
 
                     break;
@@ -495,7 +537,7 @@ module.exports = function format(text) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 5));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
 
                     }
 
@@ -615,7 +657,6 @@ module.exports = function format(text) {
                     continue
                 }
             } else {
-                // formatted.pushItems('-->', word.replace(/ /g, ''), '<--');
                 if (stack.getMargin() === 0) {
                     formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 6), ' AND');
                 } else {
@@ -643,7 +684,11 @@ module.exports = function format(text) {
                     } else if (last_keyword === 'AND') {
                         // formatted.push(stack.peek());
                     } else if (stack.peek(-1) === 'CREATE') {
-                        formatted.push(' ');
+                        if (last_keyword === 'FROM') {
+                            // pass
+                        } else {
+                            formatted.push(' ');
+                        }
                     } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
                         formatted.pushItems('\n', ' '.repeat(5));
                     }
@@ -658,10 +703,13 @@ module.exports = function format(text) {
                             setStack('INLINE', formatted.getCurrentPosition() - stack.getMargin() + 2)
                         }
                     }
-                    // formatted.push('->', stack.peek(), '<-');
 
                     if (peekNextKeyword(tokens) === 'SELECT') {
                         formatted.push(' ');
+                        // formatted.pushItems('-->', last_keyword, '<--');
+
+
+
 
                     } else if (last_keyword === 'ON') {
                         if (stack.peek() === 'INLINE') {
@@ -678,6 +726,8 @@ module.exports = function format(text) {
                         if (['('].includes(last_word)) {
                             formatted.push('\n ');
                         }
+
+                        // } else if (peekNextKeyword === 'SELECT') {
 
                     } else { // function
                         if (stack.peek() !== 'ATTRIBUTES') {
@@ -714,6 +764,10 @@ module.exports = function format(text) {
             if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
                 last_keyword = keyword;
             }
+            if (pwords.includes(word) && last_word === 'FROM') {
+                // formatted.pushItems('-->', last_word, '<--');
+                from_block = word
+            }
 
             last_word = word.toUpperCase();
             continue;
@@ -726,6 +780,9 @@ module.exports = function format(text) {
         } else if (stack.peek() === 'SELECT') {
             // column identifier
             if (keyword === ',') {
+                if (stack.getMargin() === 4 && last_keyword === 'SELECT' && from_block === '(') {
+                    setStack('SELECT', 8)
+                }
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
             }
 
@@ -744,9 +801,6 @@ module.exports = function format(text) {
 
             formatted.push(' ');
 
-        } else if (last_word === 'FROM') { // table identifier
-            formatted.push(' ');
-
         } else if (['WHERE', 'AND', 'BETWEEN', 'WHEN', 'THEN', 'ELSE',
             'AS', 'END', 'HAVING', ')', 'INTO', 'OVERWRITE'].includes(last_keyword)) {
             formatted.push(' ');
@@ -761,6 +815,7 @@ module.exports = function format(text) {
         } else if (stack.peek() === 'INLINE') {
             if (stack.peek(-1) === 'CREATE') {
                 if (keyword === ',') {
+                    formatted.push(' ');
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
                 }
             }
@@ -801,6 +856,7 @@ module.exports = function format(text) {
         } else {
             // first select
             if (word === ';') {
+                stack.pop()
                 // pass
             } else {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
@@ -819,7 +875,6 @@ module.exports = function format(text) {
         // don't forget to update last keyword
         if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
             last_keyword = keyword;
-
         }
 
         last_word = word.toUpperCase();

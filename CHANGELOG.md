@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.5] - 2022-03-05
+### Changed
+- Adjust comment spacing
+- Add minimal logic to reduce dbt mangling
+
+### Fixed 
+- Correct "from block" spacing
+- Cleanup margin stack at query end
+
 ## [0.1.4] - 2022-03-05
 ### Changed
 - adjust spaced for CASE statements

@@ -288,8 +288,13 @@ module.exports = function format(text) {
                 if (peekNextWord(tokens) === 'OUTCOME') {
                     formatted.pushItems('\n', word);
                     last_comment = 'OUTCOME'
-                } else {
+
+                } else if (stack.peek(-2)) {
+                    // formatted.pushItems('-->', stack.getMargin(), '<--');
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
+
+                } else {
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)), word);
                 }
 
             } else if (['*/', '#}'].includes(keyword)) {

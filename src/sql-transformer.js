@@ -706,10 +706,6 @@ module.exports = function format(text) {
 
                     if (peekNextKeyword(tokens) === 'SELECT') {
                         formatted.push(' ');
-                        // formatted.pushItems('-->', last_keyword, '<--');
-
-
-
 
                     } else if (last_keyword === 'ON') {
                         if (stack.peek() === 'INLINE') {
@@ -867,6 +863,7 @@ module.exports = function format(text) {
             while (stack.length) {
                 stack.pop()
             }
+            from_block = '';
             formatted.push('\n;\n\n');
 
         } else {

@@ -412,7 +412,7 @@ module.exports = function format(text) {
                     } else if (stack.getMargin() === 4 && from_block === '(') {
                         setStack('SELECT', 8)
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
-                        
+
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
                     }
@@ -856,7 +856,6 @@ module.exports = function format(text) {
         } else {
             // first select
             if (word === ';') {
-                stack.pop()
                 // pass
             } else {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
@@ -865,6 +864,9 @@ module.exports = function format(text) {
         }
 
         if (word === ';') {
+            while (stack.length) {
+                stack.pop()
+            }
             formatted.push('\n;\n\n');
 
         } else {

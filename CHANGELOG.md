@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.4] - 2022-03-05
+### Changed
+- adjust spaced for CASE statements
+- ensure that OUTCOME comment isn't duplicated
+
 ## [0.1.3] - 2022-03-05
 ### Added
 - support for math operators

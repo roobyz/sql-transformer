@@ -2,7 +2,7 @@
 	"name": "sql-transformer",
 	"displayName": "SQL Transformer",
 	"description": "SQL Transformer/formatter to enhance clarity and productivity",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"publisher": "QuantifiedLeap",
 	"author": "Roberto <@robertoleap>",
 	"homepage": "https://marketplace.visualstudio.com/items?itemName=QuantifiedLeap.sql-transformer",

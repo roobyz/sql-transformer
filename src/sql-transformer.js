@@ -14,7 +14,9 @@
 // ----------------------------------------------------------------------------
 const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
 const owords = ['::', '/', '*', '+', '-', '%']
-const rwords = [...kwords, ';', '(', ')', ',', '{{', '}}', '{%', '%}', '/*', '*/'];
+const cwords = ['/*', '*/', '{#', '#}']
+const jwords = ['{{', '}}', '{%', '%}']
+const rwords = [...kwords,...cwords,...jwords, ';', '(', ')', ','];
 
 // ----------------------------------------------------------------------------
 // What: Array class for processing the stack of SQL blocks
@@ -255,6 +257,7 @@ module.exports = function format(text) {
     let keyword = '';
     let last_word = '';
     let last_keyword = '';
+    let last_comment = '';
 
     while (tokens.length) {
         const word = tokens.shift(); // Remove next item from the beginning of token array
@@ -271,7 +274,12 @@ module.exports = function format(text) {
             if (keyword === '/*') {
                 // Start comment block
                 setStack('COMMENT', 0)
-                formatted.pushItems(' ', word);
+                if (peekNextWord(tokens) === 'OUTCOME') {
+                    formatted.pushItems('\n', word);
+                    last_comment = 'OUTCOME'
+                } else {
+                    formatted.pushItems(' ', word);
+                }
 
             } else if (keyword === '*/') {
                 // End comment block
@@ -329,8 +337,12 @@ module.exports = function format(text) {
                     if (last_word) {
                         if (last_word == '(') {
                             // pass
-                        } else if (last_word == ')' && stack.peek(-1) === 'SELECT' || stack.peek(-2) === 'SELECT') {
-                            formatted.pushItems('\n/* Outcome */\n', ' '.repeat(stack.getMargin()));
+                        } else if (last_word === ')' && stack.peek(-1) === 'SELECT' || stack.peek(-2) === 'SELECT') {
+                            if (last_comment !== 'OUTCOME') {
+                                formatted.pushItems('\n/* Outcome */\n', ' '.repeat(stack.getMargin()));
+                            } else {
+                                formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+                            }
 
                         } else {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
@@ -708,7 +720,7 @@ module.exports = function format(text) {
         }
 
         //  Process identifiers, expressions, .. etc.
-        if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR'].includes(last_word)) {
+        if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 
         } else if (stack.peek() === 'SELECT') {

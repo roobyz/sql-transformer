@@ -267,8 +267,9 @@ module.exports = function format(text) {
     let keyword = '';
     let last_word = '';
     let last_keyword = '';
-    let from_block = '';
     let last_comment = '';
+    let last_primary = '';
+    let from_block = '';
 
     while (tokens.length) {
         const word = tokens.shift(); // Remove next item from the beginning of token array
@@ -375,6 +376,7 @@ module.exports = function format(text) {
 
         //  Process keywords.
         if (kwords.includes(keyword)) {
+            last_primary = keyword
             // Adjust the keyword margins and spacing
             switch (keyword) {
                 case 'SELECT':
@@ -690,7 +692,9 @@ module.exports = function format(text) {
                     if (last_keyword === 'JOIN') {
                         // pass
                     } else if (last_keyword === 'IN') {
-                        formatted.push(' ');
+                        if (peekNextKeyword(tokens) !== 'SELECT') {
+                            formatted.push(' ');
+                        }
                     } else if (last_keyword === 'AND') {
                         // formatted.push(stack.peek());
                     } else if (stack.peek(-1) === 'CREATE') {
@@ -733,8 +737,6 @@ module.exports = function format(text) {
                             formatted.push('\n ');
                         }
 
-                        // } else if (peekNextKeyword === 'SELECT') {
-
                     } else { // function
                         if (stack.peek() !== 'ATTRIBUTES') {
                             setStack('FUNCTION', 0)
@@ -748,6 +750,7 @@ module.exports = function format(text) {
                 case ')':
                     const popped = stack.pop();
 
+                    // formatted.pushItems('-->', peekNextKeyword(tokens), '<--');
                     if (popped) {
                         if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
                             stack.pop();
@@ -756,12 +759,14 @@ module.exports = function format(text) {
                         } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
                             formatted.pushItems('\n', ' '.repeat(5));
                             stack.pop();
+                        } else if (popped.type === 'INLINE' && ['AND', 'ON', 'FROM'].includes(last_primary)) {
+                            // pass
                         } else if (popped.type === 'INLINE') {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
                         }
                     }
-                    formatted.push(word);
 
+                    formatted.push(word);
                     break;
 
             }
@@ -783,6 +788,8 @@ module.exports = function format(text) {
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 
+        } else if (keyword === ',' && last_keyword === ')' && peekNextKeyword(tokens) === ')') {
+            // pass
         } else if (stack.peek() === 'SELECT') {
             // column identifier
             if (keyword === ',') {

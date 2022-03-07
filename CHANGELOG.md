@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.6] - 2022-03-06
+### Changed
+- Spacing adjustments for inlines blocks
+- Addressed all known SQL formatting issues
+- Updated README.md
+
 ## [0.1.5] - 2022-03-05
 ### Changed
 - Adjust comment spacing

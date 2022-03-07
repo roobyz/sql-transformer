@@ -328,6 +328,11 @@ module.exports = function format(text) {
                 }
 
             } else if (['{{'].includes(keyword)) {
+                if (stack.peek() === 'SELECT') {
+                    // formatted.pushItems('-->', stack.peek(), '<--');
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
+                }
+
                 if (last_word === 'WHERE') {
                     if (['1=1', '1=1AND'].includes(word.replace(/ /g, ''))) {
                         if (['1=1AND'].includes(word.replace(/ /g, ''))) {
@@ -335,9 +340,9 @@ module.exports = function format(text) {
                         }
                     } else {
                         if (stack.getMargin() === 0) {
-                            formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 6), ' AND');
+                            formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(6)), ' AND');
                         } else {
-                            formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 2), ' AND');
+                            formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(2)), ' AND');
                         }
                     }
                     last_keyword = 'AND';
@@ -412,14 +417,14 @@ module.exports = function format(text) {
                 case 'FROM':
                     stack.pop();
                     if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 6));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
 
                     } else if (stack.getMargin() === 4 && from_block === '(') {
                         setStack('SELECT', 8)
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(2)));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(2)));
                     }
 
                     break;
@@ -442,30 +447,30 @@ module.exports = function format(text) {
                     break;
                 case 'LEFT':
                     if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 3));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
 
                     }
 
                     break;
                 case 'RIGHT':
                     if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 0));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 4));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-4)));
 
                     }
 
                     break;
                 case 'FULL':
                     if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 3));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
 
                     }
 
@@ -494,7 +499,7 @@ module.exports = function format(text) {
 
                     } else {
                         if (stack.getMargin() === 2) {
-                            formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
 
                         } else {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
@@ -510,7 +515,7 @@ module.exports = function format(text) {
                     setStack('ON', 4)
 
                     if (stack.getMargin() === 4) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
 
                     } else {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
@@ -520,17 +525,17 @@ module.exports = function format(text) {
                     break;
                 case 'WHERE':
                     if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 5));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
 
                     }
 
                     break;
                 case 'OR':
                     if (stack.peek() === 'FUNCTION') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 4));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-4)));
 
                     } else {
                         formatted.push(' ');
@@ -539,20 +544,20 @@ module.exports = function format(text) {
                     break;
                 case 'LIMIT':
                     if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 5));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
 
                     }
 
                     break;
                 case 'AND':
                     if (stack.peek() === 'INLINE' && stack.peek(-1) === 'ON') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 2));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-2)));
 
                     } else if (stack.peek() === 'INLINE' && stack.peek(-2) === 'ON') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 5));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-5)));
 
                     } else if (stack.peek() === 'CASE') {
                         formatted.push(' ');
@@ -563,10 +568,10 @@ module.exports = function format(text) {
                         stack.pop();
                     } else {
                         if (stack.getMargin() === 0) {
-                            formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 7));
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)));
 
                         } else {
-                            formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 3));
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(3)));
                         }
                     }
 
@@ -584,7 +589,7 @@ module.exports = function format(text) {
                         formatted.push(' ');
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
 
                     }
 
@@ -598,7 +603,7 @@ module.exports = function format(text) {
 
                     break;
                 case 'END':
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 1));
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(-1)));
                     stack.pop();
 
                     break;
@@ -607,7 +612,7 @@ module.exports = function format(text) {
 
                     break;
                 case 'UNION':
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 1));
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
 
                     break;
                 case 'BETWEEN':
@@ -619,10 +624,10 @@ module.exports = function format(text) {
                     setStack('BY', 0)
 
                     if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(2)));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 2));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-2)));
 
                     }
 
@@ -631,10 +636,10 @@ module.exports = function format(text) {
                     setStack('BY', 0)
 
                     if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(2)));
 
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 2));
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-2)));
 
                     }
 
@@ -663,9 +668,9 @@ module.exports = function format(text) {
                 }
             } else {
                 if (stack.getMargin() === 0) {
-                    formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 6), ' AND');
+                    formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(6)), ' AND');
                 } else {
-                    formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin() + 2), ' AND');
+                    formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(2)), ' AND');
                 }
             }
             last_keyword = 'AND';
@@ -784,7 +789,7 @@ module.exports = function format(text) {
                 if (stack.getMargin() === 4 && last_keyword === 'SELECT' && from_block === '(') {
                     setStack('SELECT', 8)
                 }
-                formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 4));
+                formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
             }
 
             // assess operators
@@ -797,7 +802,7 @@ module.exports = function format(text) {
         } else if (['INSERT', 'VALUES'].includes(stack.peek(-2))) {
             // column identifier
             if (keyword === ',') {
-                formatted.pushItems('\n', ' '.repeat(stack.getMargin() - 3));
+                formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
             }
 
             formatted.push(' ');
@@ -847,7 +852,7 @@ module.exports = function format(text) {
                 formatted.push(' ');
 
             } else if (last_word === '(') {
-                formatted.pushItems('\n', ' '.repeat(stack.getMargin() + 2));
+                formatted.pushItems('\n', ' '.repeat(stack.getMargin(2)));
 
             } else {
                 formatted.pushItems('\n', ' '.repeat(stack.getMargin()));

@@ -753,7 +753,7 @@ module.exports = function format(text) {
                         }
                         // do not append any whitespaces
                     }
-                    formatted.push(word);
+                    formatted.push(word.replace(/[`]/g, "'"));
 
                     break;
                 // Close existing block
@@ -775,7 +775,7 @@ module.exports = function format(text) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
                         }
                     }
-                    formatted.push(word);
+                    formatted.push(word.replace(/[`]/g, "'"));
 
                     // Address functions in the 'BY' stacks
                     if (stack.peek(-3) === 'BY' && peekNextKeyword(tokens) === ')') {
@@ -915,7 +915,7 @@ module.exports = function format(text) {
             formatted.push('\n;\n\n');
 
         } else {
-            formatted.push(word);
+            formatted.push(word.replace(/[`]/g, "'"));
 
         }
 

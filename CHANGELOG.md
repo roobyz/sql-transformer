@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.6] - 2022-03-06
 ### Changed
+- Change spacing for numeric vs non-numeric BY stack values
+- Account for function calls on BY stacks
+
+### Fixed
+- Account for lone single-quotes in COMMENT stacks
+
+## [0.1.6] - 2022-03-06
+### Changed
 - Spacing adjustments for inlines blocks
 - Addressed all known SQL formatting issues
 - Updated README.md

@@ -167,6 +167,12 @@ function peekNextKeyword(tokens) {
     return '';
 }
 
+function generateArrayOfNumbers(numbers) {
+    var aon = [...Array(numbers).keys()].slice(1)
+
+    return aon.map(String)
+}
+
 function tokenize(sql) {
     /**
      * Tokenizes the given sql and returns a list of tokens. 
@@ -249,7 +255,7 @@ module.exports = function format(text) {
         /(\r\n|\r|\n)/g, ' '
     ).replace(
         /\s+/g, ' '
-    );
+    ).replace(/[']/g, '`');
 
     const tokens = tokenize(sql);
     const stack = new CustomArray();
@@ -610,6 +616,10 @@ module.exports = function format(text) {
 
                     break;
                 case 'HAVING':
+                    while (stack.peek() === 'BY') {
+                        stack.pop()
+                    }
+
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
                     break;
@@ -750,10 +760,10 @@ module.exports = function format(text) {
                 case ')':
                     const popped = stack.pop();
 
-                    // formatted.pushItems('-->', peekNextKeyword(tokens), '<--');
                     if (popped) {
                         if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
                             stack.pop();
+
                         } else if (stack.peek() === 'ON') {
                             stack.pop();
                         } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
@@ -765,8 +775,20 @@ module.exports = function format(text) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
                         }
                     }
-
                     formatted.push(word);
+
+                    // Address functions in the 'BY' stacks
+                    if (stack.peek(-3) === 'BY' && peekNextKeyword(tokens) === ')') {
+                        setStack('BY', 0)
+                    }
+                    if ((stack.peek(-3) === 'BY' || stack.peek(-2) === 'BY' || stack.peek(-1) === 'BY')
+                        && peekNextKeyword(tokens) === ',') {
+                        while (stack.peek(-1) !== 'BY') {
+                            stack.pop()
+                        }
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
+                    }
+
                     break;
 
             }
@@ -776,7 +798,6 @@ module.exports = function format(text) {
                 last_keyword = keyword;
             }
             if (pwords.includes(word) && last_word === 'FROM') {
-                // formatted.pushItems('-->', last_word, '<--');
                 from_block = word
             }
 
@@ -840,11 +861,21 @@ module.exports = function format(text) {
 
         } else if (stack.peek() === 'BY') {
             if (keyword === ',') {
-                // pass
+
+                if (generateArrayOfNumbers(100).includes(peekNextWord(tokens))) {
+                    // pass
+                } else[
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)))
+                ]
             } else {
                 formatted.push(' ');
-                if (peekNextKeyword(tokens) !== ',') {
+
+                if (![',', '/*'].includes(peekNextKeyword(tokens))) {
                     stack.pop();
+                }
+
+                if (peekNextKeyword(tokens) === '(') {
+                    setStack('BY', 0)
                 }
 
             }

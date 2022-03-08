@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
-## [0.1.6] - 2022-03-06
+## [0.1.7] - 2022-03-08
 ### Changed
 - Change spacing for numeric vs non-numeric BY stack values
 - Account for function calls on BY stacks

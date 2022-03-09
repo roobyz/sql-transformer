@@ -11,7 +11,7 @@
 // ----------------------------------------------------------------------------
 // What: array of SQL keywords
 // Why:  use keywords to procecss SQL blocks and assign to stack when needed
-const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
+const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
 // ----------------------------------------------------------------------------
 // What: operators
 const owords = ['::', '/', '*', '+', '-', '%']
@@ -308,16 +308,22 @@ module.exports = function format(text) {
 
             } else if (['*/', '#}'].includes(keyword)) {
                 // End comment block
-                stack.pop();
+                if (stack.peek() !== 'WITH') {
+                    stack.pop();
+                }
 
                 formatted.pushItems(' ', word);
 
-                if (['SELECT', 'CREATE', 'INSERT'].includes(peekNextKeyword(tokens))) {
-                    if (peekNextKeyword(tokens) === 'SELECT' && last_keyword === '(') {
+                if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', ',', '('].includes(peekNextKeyword(tokens))) {
+                    if (['SELECT'].includes(peekNextKeyword(tokens)) && last_keyword === '(') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
+
+                    } else if ([',', '(', 'WITH'].includes(peekNextKeyword(tokens))) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
                     } else {
                         formatted.pushItems('\n');
+
                     }
                 }
 
@@ -428,15 +434,19 @@ module.exports = function format(text) {
                     break;
                 case 'WITH':
                     while (stack.length) {
-                        stack.pop()
+                        if (stack.peek() === 'WITH') {
+                            break;
+                        }
+                        stack.pop();
                     }
 
                     setStack('WITH', 4)
-                    formatted.push('\n');
 
                     break;
                 case 'FROM':
-                    stack.pop();
+                    if (stack.peek() !== 'WITH') {
+                        stack.pop();
+                    }
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
 
@@ -500,6 +510,21 @@ module.exports = function format(text) {
                     }
 
                     break;
+                case 'CROSS':
+                    // Check for right function
+                    if (['OUTER', 'JOIN'].includes(peekNextKeyword(tokens))) {
+                        if (stack.getMargin() === 0) {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
+
+                        } else {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(-4)));
+
+                        }
+                    } else {
+                        formatted.push(' ');
+                    }
+
+                    break;
                 case 'FULL':
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
@@ -529,7 +554,7 @@ module.exports = function format(text) {
 
                     setStack('JOIN', 2)
 
-                    if (['LEFT', 'RIGHT', 'FULL'].includes(last_word)) {
+                    if (['LEFT', 'RIGHT', 'FULL', 'CROSS'].includes(last_word)) {
                         formatted.push(' ');
 
                     } else {
@@ -600,7 +625,9 @@ module.exports = function format(text) {
                     } else if (stack.peek() === 'BETWEEN') {
                         formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('BETWEEN') + 4));
 
-                        stack.pop();
+                        if (stack.peek() !== 'WITH') {
+                            stack.pop();
+                        }
                     } else {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)));
@@ -639,7 +666,9 @@ module.exports = function format(text) {
                     break;
                 case 'END':
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin(-1)));
-                    stack.pop();
+                    if (stack.peek() !== 'WITH') {
+                        stack.pop();
+                    }
 
                     break;
                 case 'HAVING':
@@ -789,7 +818,9 @@ module.exports = function format(text) {
 
                     if (popped) {
                         if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
-                            stack.pop();
+                            if (stack.peek() !== 'WITH') {
+                                stack.pop();
+                            }
 
                         } else if (stack.peek() === 'ON') {
                             stack.pop();
@@ -811,7 +842,10 @@ module.exports = function format(text) {
                     if ((stack.peek(-3) === 'BY' || stack.peek(-2) === 'BY' || stack.peek(-1) === 'BY')
                         && peekNextKeyword(tokens) === ',') {
                         while (stack.peek(-1) !== 'BY') {
-                            stack.pop()
+                            if (stack.peek() === 'WITH') {
+                                break;
+                            }
+                            stack.pop();
                         }
 
                         // Process any operations on a function, before proceeding to next BY element
@@ -875,8 +909,10 @@ module.exports = function format(text) {
             formatted.push(' ');
 
         } else if (stack.peek() === 'ON') {
-            if (['AND', 'WHERE', 'LEFT', 'RIGHT', 'JOIN', ')'].includes(peekNextKeyword(tokens))) {
-                stack.pop();
+            if (['AND', 'WHERE', 'LEFT', 'RIGHT', 'CROSS', 'JOIN', ')'].includes(peekNextKeyword(tokens))) {
+                if (stack.peek() !== 'WITH') {
+                    stack.pop();
+                }
             }
 
             formatted.push(' ');
@@ -907,7 +943,9 @@ module.exports = function format(text) {
                 formatted.push(' ');
 
                 if (![',', '/*'].includes(peekNextKeyword(tokens))) {
-                    stack.pop();
+                    if (stack.peek() !== 'WITH') {
+                        stack.pop();
+                    }
                 }
 
                 if (peekNextKeyword(tokens) === '(') {

@@ -14,6 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.9] - 2022-03-08
+### Added
+- Account for left and right functions
+- Add additional peekNextKeyword comparsons
+
+### Changed
+- Adjust formatting for nested case statements
+- Update COMMENT and BY formatting
+
+### Fixed
+- Fix peekNextKeyword comparisons
+
 ## [0.1.8] - 2022-03-08
 ### Fixed
 - Constrain lone single-quotes fix to COMMENT stacks

@@ -454,22 +454,32 @@ module.exports = function format(text) {
 
                     break;
                 case 'LEFT':
-                    if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
-
+                    // Check for left joins
+                    if (['OUTLER', 'JOIN'].includes(peekNextKeyword(tokens))) {
+                        if (stack.getMargin() === 0) {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
+                            
+                        } else {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
+                            
+                        }                        
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
-
+                        formatted.push(' ');
                     }
 
                     break;
                 case 'RIGHT':
-                    if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
-
+                    // Check for right function
+                    if (['OUTLER', 'JOIN'].includes(peekNextKeyword(tokens))) {
+                        if (stack.getMargin() === 0) {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
+                            
+                        } else {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(-4)));
+                            
+                        }                        
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-4)));
-
+                        formatted.push(' ');
                     }
 
                     break;

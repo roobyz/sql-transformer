@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.10] - 2022-03-09
+### Added
+- Account for the '//' comment style
+
 ## [0.1.9] - 2022-03-08
 ### Added
 - Account for left and right functions

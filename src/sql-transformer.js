@@ -252,6 +252,8 @@ module.exports = function format(text) {
     const sql = text.replace(
         /--(.*)/g, '/* $1 */'
     ).replace(
+        /\/\/(.*)/g, '/* $1 */'
+    ).replace(
         /(\r\n|\r|\n)/g, ' '
     ).replace(
         /\s+/g, ' '

@@ -455,7 +455,7 @@ module.exports = function format(text) {
                     break;
                 case 'LEFT':
                     // Check for left joins
-                    if (['OUTLER', 'JOIN'].includes(peekNextKeyword(tokens))) {
+                    if (['OUTER', 'JOIN'].includes(peekNextKeyword(tokens))) {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
 
@@ -470,7 +470,7 @@ module.exports = function format(text) {
                     break;
                 case 'RIGHT':
                     // Check for right function
-                    if (['OUTLER', 'JOIN'].includes(peekNextKeyword(tokens))) {
+                    if (['OUTER', 'JOIN'].includes(peekNextKeyword(tokens))) {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
 
@@ -850,7 +850,7 @@ module.exports = function format(text) {
             formatted.push(' ');
 
         } else if (stack.peek() === 'ON') {
-            if (['AND', 'WHERE', ')'].includes(peekNextKeyword(tokens))) {
+            if (['AND', 'WHERE', 'LEFT', 'RIGHT', 'JOIN', ')'].includes(peekNextKeyword(tokens))) {
                 stack.pop();
             }
 

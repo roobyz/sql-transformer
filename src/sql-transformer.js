@@ -418,13 +418,21 @@ module.exports = function format(text) {
 
                     break;
                 case 'CREATE':
+                    while (stack.length) {
+                        stack.pop()
+                    }
+                    
                     if (stack.getMargin() === 0) {
                         setStack('CREATE', 4)
                     }
 
                     break;
                 case 'WITH':
-                    setStack('WITH', 0)
+                    while (stack.length) {
+                        stack.pop()
+                    }
+                    
+                    setStack('WITH', 4)
                     formatted.push('\n');
 
                     break;
@@ -443,7 +451,11 @@ module.exports = function format(text) {
 
                     break;
                 case 'INSERT':
-                    setStack('INSERT', 0)
+                    while (stack.length) {
+                        stack.pop()
+                    }
+                    
+                    setStack('INSERT', 4)
 
                     break;
                 case 'INTO':

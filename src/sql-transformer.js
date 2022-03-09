@@ -310,7 +310,7 @@ module.exports = function format(text) {
 
                 formatted.pushItems(' ', word);
 
-                if (stack.getMargin() === 0 && peekNextKeyword(tokens, 'SELECT')) {
+                if (stack.getMargin() === 0 && peekNextKeyword(tokens) === 'SELECT') {
                     formatted.pushItems('\n');
                 }
 
@@ -458,11 +458,11 @@ module.exports = function format(text) {
                     if (['OUTLER', 'JOIN'].includes(peekNextKeyword(tokens))) {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
-                            
+
                         } else {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
-                            
-                        }                        
+
+                        }
                     } else {
                         formatted.push(' ');
                     }
@@ -473,11 +473,11 @@ module.exports = function format(text) {
                     if (['OUTLER', 'JOIN'].includes(peekNextKeyword(tokens))) {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
-                            
+
                         } else {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(-4)));
-                            
-                        }                        
+
+                        }
                     } else {
                         formatted.push(' ');
                     }
@@ -494,13 +494,13 @@ module.exports = function format(text) {
 
                     break;
                 case 'INNER':
-                    if (peekNextKeyword(tokens, 'JOIN')) {
+                    if (peekNextKeyword(tokens) === 'JOIN') {
                         continue;
                     }
 
                     break;
                 case 'OUTER':
-                    if (peekNextKeyword(tokens, 'JOIN')) {
+                    if (peekNextKeyword(tokens) === 'JOIN') {
                         continue;
                     }
 
@@ -850,7 +850,7 @@ module.exports = function format(text) {
             formatted.push(' ');
 
         } else if (stack.peek() === 'ON') {
-            if (peekNextKeyword(tokens, 'AND')) {
+            if (['AND', 'WHERE', ')'].includes(peekNextKeyword(tokens))) {
                 stack.pop();
             }
 

@@ -310,8 +310,12 @@ module.exports = function format(text) {
 
                 formatted.pushItems(' ', word);
 
-                if (stack.getMargin() === 0 && peekNextKeyword(tokens) === 'SELECT') {
+                if (stack.getMargin() === 0 && ['SELECT', 'CREATE', 'INSERT'].includes(peekNextKeyword(tokens))) {
                     formatted.pushItems('\n');
+                }
+
+                if (peekNextKeyword(tokens) === ',' && stack.peek() === 'BY') {
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
                 }
 
             } else {
@@ -796,6 +800,14 @@ module.exports = function format(text) {
                         while (stack.peek(-1) !== 'BY') {
                             stack.pop()
                         }
+
+                        // Process any operations on a function, before proceeding to next BY element
+                        if (peekNextWord(tokens) !== ',' && word === ')') {
+                            formatted.pushItems(peekNextWord(tokens));
+                            tokens.shift()
+                        }
+
+                        // formatted.pushItems('\n-->', word, '<--');
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
                     }
 
@@ -870,13 +882,14 @@ module.exports = function format(text) {
             }
 
         } else if (stack.peek() === 'BY') {
+            // if ()
             if (keyword === ',') {
-
                 if (generateArrayOfNumbers(100).includes(peekNextWord(tokens))) {
                     // pass
-                } else[
+                } else {
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)))
-                ]
+                }
+
             } else {
                 formatted.push(' ');
 

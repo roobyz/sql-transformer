@@ -312,8 +312,13 @@ module.exports = function format(text) {
 
                 formatted.pushItems(' ', word);
 
-                if (stack.getMargin() === 0 && ['SELECT', 'CREATE', 'INSERT'].includes(peekNextKeyword(tokens))) {
-                    formatted.pushItems('\n');
+                if (['SELECT', 'CREATE', 'INSERT'].includes(peekNextKeyword(tokens))) {
+                    if (peekNextKeyword(tokens) === 'SELECT' && last_keyword === '(') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else {
+                        formatted.pushItems('\n');
+                    }
                 }
 
                 if (peekNextKeyword(tokens) === ',' && stack.peek() === 'BY') {
@@ -352,11 +357,7 @@ module.exports = function format(text) {
                             continue
                         }
                     } else {
-                        if (stack.getMargin() === 0) {
-                            formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(6)), ' AND');
-                        } else {
-                            formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(2)), ' AND');
-                        }
+                        formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(2)), ' AND');
                     }
                     last_keyword = 'AND';
                     last_word = 'AND';
@@ -421,17 +422,15 @@ module.exports = function format(text) {
                     while (stack.length) {
                         stack.pop()
                     }
-                    
-                    if (stack.getMargin() === 0) {
-                        setStack('CREATE', 4)
-                    }
+
+                    setStack('CREATE', 4)
 
                     break;
                 case 'WITH':
                     while (stack.length) {
                         stack.pop()
                     }
-                    
+
                     setStack('WITH', 4)
                     formatted.push('\n');
 
@@ -454,7 +453,7 @@ module.exports = function format(text) {
                     while (stack.length) {
                         stack.pop()
                     }
-                    
+
                     setStack('INSERT', 4)
 
                     break;

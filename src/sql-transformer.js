@@ -91,7 +91,7 @@ class CustomQueue extends Array {
     getPosOfKeywordPreviousLine(keyword) {
         for (let i = this.length - 1; i > 0; i--) {
             if (this[i] === '\n') {
-                const position = this.slice(i + 1, this.length).join('').toUpperCase().indexOf(keyword);
+                const position = this.slice(i + 1, this.length).join('').toUpperCase().lastIndexOf(keyword);
                 if (position > 0) {
                     return position;
                 }

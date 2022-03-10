@@ -257,7 +257,13 @@ module.exports = function format(text) {
         /(\r\n|\r|\n)/g, ' '
     ).replace(
         /\s+/g, ' '
-    ).replace(/[']/g, '`');
+    ).replace(
+        /[']/g, '`'
+    ).replace(
+        /\*\/ \*\/ \*\//g, '\*\/'
+    ).replace(
+        /\*\/ \*\//g, '\*\/'
+    );
 
     const tokens = tokenize(sql);
     const stack = new CustomArray();
@@ -289,21 +295,22 @@ module.exports = function format(text) {
             keyword = '';
         }
 
-        //  Process comment blocks.
+        // Process comment blocks.
         if (cwords.includes(keyword) || stack.peek() === 'COMMENT') {
             if (['/*', '{#'].includes(keyword)) {
+                if (peekNextWord(tokens) === 'OUTCOME') {
+                    last_comment = 'OUTCOME'
+                }
+
                 // Start comment block
                 setStack('COMMENT', 0)
-                if (peekNextWord(tokens) === 'OUTCOME') {
-                    formatted.pushItems('\n', word);
-                    last_comment = 'OUTCOME'
-
-                } else if (stack.peek(-2)) {
+                if (last_word === ';') {
                     // formatted.pushItems('-->', stack.getMargin(), '<--');
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)), word);
 
                 } else {
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)), word);
+                    // formatted.pushItems('\n-->', stack.peek(-2), '<--');
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
                 }
 
             } else if (['*/', '#}'].includes(keyword)) {
@@ -312,9 +319,10 @@ module.exports = function format(text) {
                     stack.pop();
                 }
 
+                // Close the comment
                 formatted.pushItems(' ', word);
 
-                if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', ',', '('].includes(peekNextKeyword(tokens))) {
+                if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'GROUP BY', 'ORDER BY', ',', '('].includes(peekNextKeyword(tokens))) {
                     if (['SELECT'].includes(peekNextKeyword(tokens)) && last_keyword === '(') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
@@ -325,8 +333,42 @@ module.exports = function format(text) {
                             }
                             stack.pop();
                         }
-    
+
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else if (last_keyword === ')' && [','].includes(peekNextKeyword(tokens))) {
+                        while (stack.length) {
+                            if (stack.peek() === 'WITH') {
+                                break;
+                            }
+                            stack.pop();
+                        }
+
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else if (last_keyword === ')' && ['SELECT'].includes(peekNextKeyword(tokens))) {
+                        last_comment = ''
+                        while (stack.length) {
+                            if (stack.peek() === 'WITH') {
+                                break;
+                            }
+                            stack.pop();
+                        }
+                        setStack('SELECT', 4)
+
+                    } else if (last_keyword === ',' && ['AS'].includes(peekNextKeyword(tokens))) {
+                        while (stack.length) {
+                            if (stack.peek() === 'WITH') {
+                                break;
+                            }
+                            stack.pop();
+                        }
+
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else if (['GROUP BY', 'ORDER BY'].includes(peekNextKeyword(tokens))) {
+                        setStack('BY', 0)
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
 
                     } else if ([','].includes(peekNextKeyword(tokens))) {
                         // Check for nexted CTE
@@ -336,7 +378,7 @@ module.exports = function format(text) {
                                     break;
                                 }
                                 stack.pop();
-                            }                                
+                            }
                         }
 
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
@@ -363,6 +405,7 @@ module.exports = function format(text) {
             continue;
         }
 
+        // Process jinja blocks
         if (dwords.includes(keyword) || stack.peek() === 'JINJA') {
             if (['{%'].includes(keyword)) {
                 // Start JINJA block
@@ -427,12 +470,23 @@ module.exports = function format(text) {
                     } else {
                         setStack('SELECT', 0)
                     }
+
                     if (last_word) {
                         if (last_word == '(') {
                             // pass
                         } else if (last_word === ')' && stack.peek(-1) === 'SELECT' || stack.peek(-2) === 'SELECT') {
                             if (last_comment !== 'OUTCOME') {
-                                formatted.pushItems('\n/* Outcome */\n', ' '.repeat(stack.getMargin()));
+                                while (stack.length) {
+                                    if (stack.peek() === 'WITH') {
+                                        break;
+                                    }
+                                    stack.pop();
+                                }
+
+                                stack.pop()
+                                formatted.pushItems('\n', ' '.repeat(stack.getMargin()), '/* Outcome */');
+                                setStack('SELECT', 4)
+                                formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
                             } else {
                                 formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
                             }
@@ -461,6 +515,10 @@ module.exports = function format(text) {
                             break;
                         }
                         stack.pop();
+                    }
+
+                    if (last_keyword === ')' && peekNextKeyword(tokens) === 'AS') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
                     }
 
                     setStack('WITH', 4)
@@ -839,6 +897,18 @@ module.exports = function format(text) {
                 case ')':
                     const popped = stack.pop();
 
+                    if (peekNextWord(tokens) === ';') {
+                        formatted.pushItems(word);
+                        while (stack.length) {
+                            stack.pop()
+                        }
+                        from_block = '';
+                        formatted.push('\n;\n\n');
+                        last_word = ';';
+                        tokens.shift()
+                        continue
+                    }
+
                     if (popped) {
                         if (['FUNCTION', 'ATTRIBUTES'].includes(popped.type)) {
                             if (stack.peek() !== 'WITH') {
@@ -995,25 +1065,7 @@ module.exports = function format(text) {
             }
 
         } else {
-            // first select
-            if (word === ';') {
-                // pass
-            } else {
-                formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
-
-            }
-        }
-
-        if (word === ';') {
-            while (stack.length) {
-                stack.pop()
-            }
-            from_block = '';
-            formatted.push('\n;\n\n');
-
-        } else {
-            formatted.push(word.replace(/[`]/g, "'"));
-
+            formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
         }
 
         // don't forget to update last keyword
@@ -1021,7 +1073,21 @@ module.exports = function format(text) {
             last_keyword = keyword;
         }
 
-        last_word = word.toUpperCase();
+        // Always reset the stack at end the end of each query 
+        if (word === ';') {
+            while (stack.length) {
+                stack.pop()
+            }
+            from_block = '';
+            formatted.push('\n;\n\n');
+            last_word = ';';
+
+        } else {
+            formatted.push(word.replace(/[`]/g, "'"));
+            last_word = word.toUpperCase();
+
+        }
+
     }
 
     return formatted.join('');

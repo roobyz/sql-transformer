@@ -322,7 +322,7 @@ module.exports = function format(text) {
                 // Close the comment
                 formatted.pushItems(' ', word);
 
-                if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'GROUP BY', 'ORDER BY', ',', '('].includes(peekNextKeyword(tokens))) {
+                if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'GROUP BY', 'ORDER BY', '('].includes(peekNextKeyword(tokens))) {
                     if (['SELECT'].includes(peekNextKeyword(tokens)) && last_keyword === '(') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
@@ -367,8 +367,14 @@ module.exports = function format(text) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
                     } else if (['GROUP BY', 'ORDER BY'].includes(peekNextKeyword(tokens))) {
-                        setStack('BY', 0)
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
+                        if (stack.getMargin() === 0) {
+                            setStack('BY', 4)
+
+                        } else {
+                            setStack('BY', 0)
+
+                        }
 
                     } else if ([','].includes(peekNextKeyword(tokens))) {
                         // Check for nexted CTE
@@ -633,7 +639,12 @@ module.exports = function format(text) {
                         stack.pop();
                     }
 
-                    setStack('JOIN', 2)
+                    if (last_word = 'CROSS') {
+                        setStack('JOIN', 0)
+
+                    } else {
+                        setStack('JOIN', 2)
+                    }
 
                     if (['LEFT', 'RIGHT', 'FULL', 'CROSS'].includes(last_word)) {
                         formatted.push(' ');
@@ -770,7 +781,13 @@ module.exports = function format(text) {
 
                     break;
                 case 'GROUP BY':
-                    setStack('BY', 0)
+                    if (stack.peek(-1) === 'ON') {
+                        setStack('BY', -4)
+
+                    } else {
+                        setStack('BY', 0)
+
+                    }
 
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(2)));
@@ -782,7 +799,13 @@ module.exports = function format(text) {
 
                     break;
                 case 'ORDER BY':
-                    setStack('BY', 0)
+                    if (stack.peek(-1) === 'ON') {
+                        setStack('BY', -4)
+
+                    } else {
+                        setStack('BY', 0)
+
+                    }
 
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(2)));
@@ -984,10 +1007,10 @@ module.exports = function format(text) {
             if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
                 last_keyword = keyword;
             }
-            
+
             last_word = ','
             continue
-    
+
         } else if (keyword === ',' && last_keyword === ')' && peekNextKeyword(tokens) === ')') {
             // pass
         } else if (stack.peek() === 'SELECT') {

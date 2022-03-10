@@ -316,10 +316,23 @@ module.exports = function format(text) {
 
                 if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', ',', '('].includes(peekNextKeyword(tokens))) {
                     if (['SELECT'].includes(peekNextKeyword(tokens)) && last_keyword === '(') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
-
-                    } else if ([',', '(', 'WITH'].includes(peekNextKeyword(tokens))) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else if (['WITH'].includes(peekNextKeyword(tokens))) {
+                        while (stack.length) {
+                            if (stack.peek() === 'WITH') {
+                                break;
+                            }
+                            stack.pop();
+                        }
+    
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else if ([','].includes(peekNextKeyword(tokens))) {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else if (['('].includes(peekNextKeyword(tokens))) {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
 
                     } else {
                         formatted.pushItems('\n');

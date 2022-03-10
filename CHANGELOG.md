@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.1.11] - 2022-03-09
+### Added
+- CROSS joins
+- Nested CTEs
+
+### Changed
+- Cleanup COMMENT blocks
+- Adjust OUTCOME comment
+- Cleanup end of queries
+
+### Fixed
+- Strip extraneous '*/' at the end of comments
+- Spacing for CTE blocks
+
 ## [0.1.10] - 2022-03-09
 ### Added
 - Account for the '//' comment style

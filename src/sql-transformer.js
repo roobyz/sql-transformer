@@ -329,6 +329,16 @@ module.exports = function format(text) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
                     } else if ([','].includes(peekNextKeyword(tokens))) {
+                        // Check for nexted CTE
+                        if (['AS'].includes(peekNextKeyword(tokens))) {
+                            while (stack.length) {
+                                if (stack.peek() === 'WITH') {
+                                    break;
+                                }
+                                stack.pop();
+                            }                                
+                        }
+
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
                     } else if (['('].includes(peekNextKeyword(tokens))) {

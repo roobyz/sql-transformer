@@ -971,6 +971,23 @@ module.exports = function format(text) {
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 
+        } else if (keyword === ',' && last_keyword === ')' && peekNextKeyword(tokens) === 'AS') {
+            while (stack.length) {
+                if (stack.peek() === 'WITH') {
+                    break;
+                }
+                stack.pop();
+            }
+
+            formatted.push(',');
+            formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
+            if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
+                last_keyword = keyword;
+            }
+            
+            last_word = ','
+            continue
+    
         } else if (keyword === ',' && last_keyword === ')' && peekNextKeyword(tokens) === ')') {
             // pass
         } else if (stack.peek() === 'SELECT') {

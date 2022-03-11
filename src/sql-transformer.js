@@ -672,7 +672,7 @@ module.exports = function format(text) {
                         stack.pop();
                     }
 
-                    if (last_word = 'CROSS') {
+                    if (last_word === 'CROSS') {
                         setStack('JOIN', 0)
 
                     } else {

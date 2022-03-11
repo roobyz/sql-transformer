@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.2.1] - 2022-03-10
+### Changed
+- Set correct margins for COMMENT blocks within a BY block
+- Set correct margins for BY blocks after a COMMENT block
+- Adjust margins for BY block attributes when margin equals zero
+- Removed unnecessary blank lines
+
+### Added
+- Set margins for JOIN blocks after a COMMENT block
+- Adjust margins for CROSS join blocks 
+
+### Fixed
+- Updated regex to ensure reproducible outcomes
+
 ## [0.1.11] - 2022-03-09
 ### Added
 - CROSS joins

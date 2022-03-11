@@ -36,33 +36,34 @@ INSERT INTO target_tab
      , some_case
      )
 WITH
-cte_1 AS (SELECT a.k_1
-               , a.k_2
-               , max(a.col) AS max_col
-            FROM tab_d a
-            JOIN tab_f b
-              ON(a.k_1 = b.k_1
-             AND a.k_2 = b.k_2
-             AND a.k_3 = b.k_3
-             AND a.k_4 = b.k_4)
-        GROUP BY a.k_1, a.k_2
-         ) ,
-cte_2 AS (SELECT a.k
-               , max(b.v) AS max_v
-               , avg(c.v) AS avg_v
-               , min(d.v) AS min_v
-               , count(e.v) AS cnt
-            FROM tab_e a
-            JOIN tab_f b
-              ON a.k = b.k
-       LEFT JOIN tab_g c
-              ON a.k = c.k
-       LEFT JOIN tab_h d
-              ON a.k = d.k
-       LEFT JOIN tab_i e
-              ON a.k = e.k
-        GROUP BY a
-         )
+    cte_1 AS (SELECT a.k_1
+                   , a.k_2
+                   , max(a.col) AS max_col
+                FROM tab_d a
+                JOIN tab_f b
+                  ON(a.k_1 = b.k_1
+                 AND a.k_2 = b.k_2
+                 AND a.k_3 = b.k_3
+                 AND a.k_4 = b.k_4)
+            GROUP BY a.k_1
+                   , a.k_2
+             ),
+    
+    cte_2 AS (SELECT a.k
+                   , max(b.v) AS max_v
+                   , avg(c.v) AS avg_v
+                   , min(d.v) AS min_v
+                   , count(e.v) AS cnt
+                FROM tab_e a
+                JOIN tab_f b
+                  ON a.k = b.k
+           LEFT JOIN tab_g c
+                  ON a.k = c.k
+           LEFT JOIN tab_h d
+                  ON a.k = d.k
+           LEFT JOIN tab_i e
+                  ON a.k = e.k
+            GROUP BY a)
 /* Outcome */
     SELECT from_timestamp(from_utc_timestamp(from_unixtime(cast(dttm/1000 AS bigint)), 'ROK'), 'yyyy-mm') AS monthly
          , a.a
@@ -100,7 +101,7 @@ cte_2 AS (SELECT a.k
                AND b.d = 'dd')
                    /* + shuffle */
          LEFT JOIN cte_2 c
-                ON(a.c = c.a)
+                ON a.c = c.a
              WHERE 1=1
                AND a.col_1 >= 'filter'
                    /* comment */
@@ -115,11 +116,12 @@ cte_2 AS (SELECT a.k
           GROUP BY a.k
             HAVING count(1) > 0
            ) b
-        ON(a.k = b.k)
+        ON a.k = b.k
   GROUP BY 1, 2
-  ORDER BY 1, 2
+  ORDER BY 1, 2 
 ;
 ```
+
 ## Testing Changes
 
 Run `npm run test` to test code changes on our sample.sql file

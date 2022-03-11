@@ -273,6 +273,8 @@ module.exports = function format(text) {
         /\*\/ \*\//g, '\*\/'
     ).replace(
         /\/\* Outcome \*\//g, ''
+    ).replace(
+        /ON\(/g, 'ON ('
     );
 
     const tokens = tokenize(sql);
@@ -567,6 +569,7 @@ module.exports = function format(text) {
                     if (stack.peek() !== 'WITH') {
                         stack.pop();
                     }
+
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
 
@@ -1093,11 +1096,6 @@ module.exports = function format(text) {
                 if (keyword === ',') {
                     formatted.push(' ');
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
-                }
-            }
-            if (stack.peek(-2) === 'ON') {
-                if (last_word !== '(') {
-                    formatted.push(' ');
                 }
             }
 

@@ -323,7 +323,7 @@ module.exports = function format(text) {
                 }
 
                 //  Ensure that the next comment block starts on a new line.
-                if (formatted[formatted.length - 1] === '*/') {
+                if ((formatted[formatted.length - 1] || '').trim() === '*/') {
                     formatted.pushItems('\n');
                 }
 
@@ -331,6 +331,10 @@ module.exports = function format(text) {
                     formatted.pushItems(word);
 
                 } else {
+                    while ((formatted[formatted.length - 1] || '-').trim() === '') {
+                        formatted.pop()
+                    }
+
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
 
                 }
@@ -1160,9 +1164,6 @@ module.exports = function format(text) {
             }
             from_block = '';
 
-            while (formatted[formatted.length - 1].trim() === '') {
-                formatted.pop()
-            }
 
             formatted.push('\n;\n\n');
             last_word = ';';
@@ -1174,7 +1175,7 @@ module.exports = function format(text) {
         }
 
     }
-    
+
     // revert backticks to single quotes on the final string
     return formatted.join('').replace(/[`]/g, "'");
 }

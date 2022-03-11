@@ -303,7 +303,14 @@ module.exports = function format(text) {
                 }
 
                 // Start comment block
-                setStack('COMMENT', 0)
+                if (stack.getMargin() === 0) {
+                    setStack('COMMENT', 4)
+
+                } else {
+                    setStack('COMMENT', 0)
+
+                }
+
                 if (last_word === ';') {
                     // formatted.pushItems('-->', stack.getMargin(), '<--');
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)), word);
@@ -398,8 +405,15 @@ module.exports = function format(text) {
                     }
                 }
 
+                // Set margins for BY block attributes after a COMMENT block
                 if (peekNextKeyword(tokens) === ',' && stack.peek() === 'BY') {
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
+                    if (stack.getMargin() === 0) {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(8)));
+
+                    } else {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
+
+                    }
                 }
 
             } else {
@@ -970,8 +984,14 @@ module.exports = function format(text) {
                             tokens.shift()
                         }
 
-                        // formatted.pushItems('\n-->', word, '<--');
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
+                        // formatted.pushItems('\n-->', 'TEST', stack.getMargin(), '<--');
+                        if (stack.getMargin() === 0) {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(8)));
+
+                        } else {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
+
+                        }
                     }
 
                     break;
@@ -1069,7 +1089,13 @@ module.exports = function format(text) {
                 if (generateArrayOfNumbers(100).includes(peekNextWord(tokens))) {
                     // pass
                 } else {
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)))
+                    if (stack.getMargin() === 0) {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(9)));
+
+                    } else {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
+
+                    }
                 }
 
             } else {

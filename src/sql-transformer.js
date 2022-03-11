@@ -249,10 +249,18 @@ module.exports = function format(text) {
      * @returns {String}
      */
 
+    /**
+     * Regex steps:
+     * - swaps any comment lines starting with -- or // with comment blocks
+     * - removes and carriage returns or new lines
+     * - swaps single quotes for backticks
+     * - removes redundant comment block ends
+     * - removes any existing `Outcome` comments
+     **/
     const sql = text.replace(
-        /--(.*)/g, '/* $1 */'
+        /^--(.*)/gm, '/* $1 */'
     ).replace(
-        /\/\/(.*)/g, '/* $1 */'
+        /^\/\/(.*)/gm, '/* $1 */'
     ).replace(
         /(\r\n|\r|\n)/g, ' '
     ).replace(
@@ -263,12 +271,15 @@ module.exports = function format(text) {
         /\*\/ \*\/ \*\//g, '\*\/'
     ).replace(
         /\*\/ \*\//g, '\*\/'
+    ).replace(
+        /\/\* Outcome \*\//g, ''
     );
 
     const tokens = tokenize(sql);
     const stack = new CustomArray();
     const formatted = new CustomQueue();
 
+    // Function to configure margin blocks by type
     function setStack(name, size) {
         stack.push(
             {
@@ -311,13 +322,17 @@ module.exports = function format(text) {
 
                 }
 
-                if (last_word === ';') {
-                    // formatted.pushItems('-->', stack.getMargin(), '<--');
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)), word);
+                //  Ensure that the next comment block starts on a new line.
+                if (formatted[formatted.length - 1] === '*/') {
+                    formatted.pushItems('\n');
+                }
+
+                if (last_word === ';' || last_word === '') {
+                    formatted.pushItems(word);
 
                 } else {
-                    // formatted.pushItems('\n-->', stack.peek(-2), '<--');
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
+
                 }
 
             } else if (['*/', '#}'].includes(keyword)) {
@@ -329,7 +344,7 @@ module.exports = function format(text) {
                 // Close the comment
                 formatted.pushItems(' ', word);
 
-                if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'GROUP BY', 'ORDER BY', '('].includes(peekNextKeyword(tokens))) {
+                if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'JOIN', 'GROUP BY', 'ORDER BY', '('].includes(peekNextKeyword(tokens))) {
                     if (['SELECT'].includes(peekNextKeyword(tokens)) && last_keyword === '(') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
@@ -927,7 +942,7 @@ module.exports = function format(text) {
                         }
                         // do not append any whitespaces
                     }
-                    formatted.push(word.replace(/[`]/g, "'"));
+                    formatted.push(word);
 
                     break;
                 // Close existing block
@@ -963,7 +978,7 @@ module.exports = function format(text) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
                         }
                     }
-                    formatted.push(word.replace(/[`]/g, "'"));
+                    formatted.push(word);
 
                     // Address functions in the 'BY' stacks
                     if (stack.peek(-3) === 'BY' && peekNextKeyword(tokens) === ')') {
@@ -984,7 +999,6 @@ module.exports = function format(text) {
                             tokens.shift()
                         }
 
-                        // formatted.pushItems('\n-->', 'TEST', stack.getMargin(), '<--');
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(8)));
 
@@ -1145,16 +1159,22 @@ module.exports = function format(text) {
                 stack.pop()
             }
             from_block = '';
+
+            while (formatted[formatted.length - 1].trim() === '') {
+                formatted.pop()
+            }
+
             formatted.push('\n;\n\n');
             last_word = ';';
 
         } else {
-            formatted.push(word.replace(/[`]/g, "'"));
+            formatted.push(word);
             last_word = word.toUpperCase();
 
         }
 
     }
-
-    return formatted.join('');
+    
+    // revert backticks to single quotes on the final string
+    return formatted.join('').replace(/[`]/g, "'");
 }

@@ -251,13 +251,16 @@ module.exports = function format(text) {
 
     /**
      * Regex steps:
-     * - swaps any comment lines starting with -- or // with comment blocks
-     * - removes and carriage returns or new lines
+     * - trim any leading whitespaces on each line
+     * - replace comment lines starting with -- or // with comment blocks
+     * - remove and carriage returns or new lines
      * - swaps single quotes for backticks
      * - removes redundant comment block ends
      * - removes any existing `Outcome` comments
      **/
     const sql = text.replace(
+        /^\s*/gm, ''
+    ).replace(
         /^--(.*)/gm, '/* $1 */'
     ).replace(
         /^\/\/(.*)/gm, '/* $1 */'

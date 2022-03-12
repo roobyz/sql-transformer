@@ -252,7 +252,7 @@ module.exports = function format(text) {
     /**
      * Regex steps:
      * - trim any leading whitespaces on each line
-     * - replace comment lines starting with -- or // with comment blocks
+     * - replace comment lines (-- or //) with comment blocks
      * - remove and carriage returns or new lines
      * - swaps single quotes for backticks
      * - removes redundant comment block ends
@@ -264,6 +264,8 @@ module.exports = function format(text) {
         /^--(.*)/gm, '/* $1 */'
     ).replace(
         /^\/\/(.*)/gm, '/* $1 */'
+    ).replace(
+        /([^{#])(.*)([/][*])(.*)([*][/])(.*)([#][}])/g, '$4$6$7'
     ).replace(
         /(\r\n|\r|\n)/g, ' '
     ).replace(
@@ -300,6 +302,7 @@ module.exports = function format(text) {
     let last_comment = '';
     let last_primary = '';
     let from_block = '';
+    let case_block = false;
 
     while (tokens.length) {
         const word = tokens.shift(); // Remove next item from the beginning of token array
@@ -561,7 +564,7 @@ module.exports = function format(text) {
                         stack.pop();
                     }
 
-                    if (last_keyword === ')' && peekNextKeyword(tokens) === 'AS') {
+                    if (['INTO', '(', ')'].includes(last_keyword) && peekNextKeyword(tokens) === 'AS') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
                     }
 
@@ -577,7 +580,12 @@ module.exports = function format(text) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
 
                     } else if (stack.getMargin() === 4 && from_block === '(') {
-                        setStack('SELECT', 8)
+                        if (stack.peek() === 'WITH') {
+                            setStack('SELECT', 4)
+                        } else {
+                            setStack('SELECT', 8)
+                        }
+
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(2)));
 
                     } else {
@@ -750,15 +758,18 @@ module.exports = function format(text) {
                     } else if (stack.peek() === 'INLINE' && stack.peek(-2) === 'ON') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(-5)));
 
-                    } else if (stack.peek() === 'CASE') {
-                        formatted.push(' ');
-
                     } else if (stack.peek() === 'BETWEEN') {
                         formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('BETWEEN') + 4));
 
                         if (stack.peek() !== 'WITH') {
                             stack.pop();
                         }
+                    } else if (stack.peek() === 'FUNCTION') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-5)));
+
+                    } else if (stack.peek() === 'CASE') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
+
                     } else {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)));
@@ -770,11 +781,33 @@ module.exports = function format(text) {
 
                     break;
                 case 'CASE':
-                    if (last_keyword !== '(') {
-                        formatted.push(' ');
-                    }
+                    if (['('].includes(last_keyword)) {
+                        if (formatted.getCurrentPosition() > 50) {
+                            formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('AND') + 4));
+                        }
 
+                    } else if ([','].includes(last_keyword)) {
+                        formatted.push(' ');
+
+                    } else if (case_block) {
+                        formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('AND') + 4));
+
+                    } else if (['THEN'].includes(last_keyword)) {
+                        formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('AND') + 4));
+
+                    } else if ((formatted.getCurrentPosition() - formatted.getPosOfKeywordPreviousLine(',')) < 10) {
+                        // pass
+
+                    } else if (formatted.getPosOfKeywordPreviousLine('CASE WHEN') < formatted.getCurrentPosition()) {
+                        formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('END')));
+
+                    } else {
+                        // formatted.pushItems('-->', 'CHK1', '<--');
+                        formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine(',') + 4));
+
+                    }
                     setStack('CASE', formatted.getCurrentPosition() - stack.getMargin() + 1)
+                    case_block = true;
 
                     break;
                 case 'WHEN':
@@ -788,7 +821,7 @@ module.exports = function format(text) {
 
                     break;
                 case 'THEN':
-                    formatted.push(' ');
+                    formatted.pushItems(' ');
 
                     break;
                 case 'ELSE':
@@ -799,6 +832,12 @@ module.exports = function format(text) {
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin(-1)));
                     if (stack.peek() !== 'WITH') {
                         stack.pop();
+                        if (stack.peek() === 'CASE' || stack.peek(-1) === 'CASE' || stack.peek(-2) === 'CASE' || stack.peek(-3) === 'CASE') {
+                            //pass
+                        } else {
+                            case_block = false;
+
+                        }
                     }
 
                     break;
@@ -1168,6 +1207,7 @@ module.exports = function format(text) {
 
             formatted.push('\n;\n\n');
             last_word = ';';
+            last_comment = '';
 
         } else {
             formatted.push(word);

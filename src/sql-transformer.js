@@ -1100,7 +1100,7 @@ module.exports = function format(text) {
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 
-        } else if (last_keyword === '(' && stack.peek() === 'INLINE' && !last_primary === 'INTO') {
+        } else if (last_keyword === '(' && stack.peek() === 'INLINE' && last_primary !== 'INTO') {
             // pass
 
         } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, ['AS'])) {

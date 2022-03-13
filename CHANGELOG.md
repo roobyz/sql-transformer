@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.2.5] - 2022-03-12
+### Changed
+- Correct comparison operator
+
 ## [0.2.4] - 2022-03-12
 ### Changed
 - Refactor function (isUpcomingKeyword-->isNextKeyword) to use array for list of values

@@ -349,7 +349,10 @@ module.exports = function format(text) {
                         formatted.pop()
                     }
 
-                    if (stack.peek(-2) !== 'FUNCTION') {
+                    if (stack.peek(-2) === 'ON') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(3)), word);
+
+                    } else if (stack.peek(-2) !== 'FUNCTION') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
 
                     } else {

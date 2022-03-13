@@ -336,11 +336,6 @@ module.exports = function format(text) {
 
                 }
 
-                //  Ensure that the next comment block starts on a new line.
-                if ((formatted[formatted.length - 1] || '').trim() === '*/') {
-                    formatted.pushItems('\n');
-                }
-
                 if (last_word === ';' || last_word === '') {
                     formatted.pushItems(word);
 
@@ -370,21 +365,43 @@ module.exports = function format(text) {
                 // Close the comment
                 formatted.pushItems(' ', word);
 
-                if (isNextKeyword(tokens, ['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'JOIN', 'GROUP BY', 'ORDER BY', '('])) {
+                if (isNextKeyword(tokens, [')'])) {
+                    // formatted.pushItems('-->', stack.peek(), '<--');
+                    formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+                }
+
+                if ((formatted[formatted.length - 1] || '') === '*/') {
+                    if (last_keyword === 'WHERE') {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
+
+                    } else if (['INSERT', 'CREATE'].includes(peekNextWord(tokens))) {
+                        // pass
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else if (kwords.includes(peekNextWord(tokens))) {
+                        // pass
+
+                    } else if ([','].includes(peekNextWord(tokens))) {
+                        // pass
+
+                    } else {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    }
+                }
+
+                if (isNextKeyword(tokens, ['JOIN'], 1)) {
+                    if (!isNextKeyword(tokens, ['SELECT', '('], 1)) {
+                        if (stack.peek() === 'ON') {
+                            stack.pop();
+                        }
+                    }
+
+                } else if (isNextKeyword(tokens, ['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'GROUP BY', 'ORDER BY', '('])) {
                     if (isNextKeyword(tokens, ['SELECT']) && last_keyword === '(') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
                     } else if (isNextKeyword(tokens, ['WITH'])) {
-                        while (stack.length) {
-                            if (stack.peek() === 'WITH') {
-                                break;
-                            }
-                            stack.pop();
-                        }
-
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
-
-                    } else if (last_keyword === ')' && isNextKeyword(tokens, [','])) {
                         while (stack.length) {
                             if (stack.peek() === 'WITH') {
                                 break;
@@ -415,7 +432,7 @@ module.exports = function format(text) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
                     } else if (isNextKeyword(tokens, ['GROUP BY', 'ORDER BY'])) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
+                        formatted.pushItems(' '.repeat(stack.getMargin(-2)));
                         if (stack.getMargin() === 0) {
                             setStack('BY', 4)
 
@@ -424,47 +441,36 @@ module.exports = function format(text) {
 
                         }
 
-                    } else if (isNextKeyword(tokens, [','])) {
-                        // Check for nested CTE
-                        if (isNextKeyword(tokens, ['AS'])) {
-                            while (stack.length) {
-                                if (stack.peek() === 'WITH') {
-                                    break;
-                                }
-                                stack.pop();
-                            }
-                        }
-
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
-
                     } else if (isNextKeyword(tokens, ['('])) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
+                        formatted.pushItems(' '.repeat(stack.getMargin(6)));
 
                     } else {
-                        formatted.pushItems('\n');
-
+                        if ((formatted[formatted.length - 1] || '').trim() === '*/') {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+                        }
                     }
-                }
+                } else if (isNextKeyword(tokens, [','])) {
+                    switch (stack.peek()) {
+                        case 'FUNCTION':
+                            if (stack.getMargin() === 0) {
+                                formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
 
-                if (isNextKeyword(tokens, [',']) && stack.peek() === 'FUNCTION') {
-                    // formatted.pushItems('-->', stack.peek(), '<--');
-                    if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
+                            } else {
+                                formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
+                            }
 
-                    } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
+                            break;
+                        case 'BY':
+                            if (stack.getMargin() === 0) {
+                                formatted.pushItems('\n', ' '.repeat(stack.getMargin(9)));
 
-                    }
-                }
+                            } else {
+                                formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
+                            }
 
-                // Set margins for BY block attributes after a COMMENT block
-                if (isNextKeyword(tokens, [',']) && stack.peek() === 'BY') {
-                    if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(8)));
-
-                    } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
-
+                            break;
+                        default:
+                        // pass
                     }
                 }
 
@@ -563,10 +569,17 @@ module.exports = function format(text) {
                             }
 
                         } else {
+                            // formatted.pushItems('-->', 'chk0', '<--');
+                            while ((formatted[formatted.length - 1] || '').trim() === '') {
+                                formatted.pop();
+                            }
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
                         }
                     } else {
+                        // while ((formatted[formatted.length - 1] || '').trim() === '') {
+                        //     formatted.pop();
+                        // }
                         formatted.pushItems(' '.repeat(stack.getMargin()));
 
                     }
@@ -797,7 +810,6 @@ module.exports = function format(text) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)));
 
                         } else {
-                            // formatted.pushItems('-->', 'CHK1', '<--');
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(3)));
                         }
                     }
@@ -1185,12 +1197,17 @@ module.exports = function format(text) {
                 if (generateArrayOfNumbers(100).includes(peekNextWord(tokens))) {
                     // pass
                 } else {
-                    if (stack.getMargin() === 0) {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(9)));
-
+                    // Check whether a margin was created by a COMMENT block
+                    if ((formatted[formatted.length - 1] || '').trim() === '') {
+                        // pass
                     } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
+                        if (stack.getMargin() === 0) {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(9)));
 
+                        } else {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
+
+                        }
                     }
                 }
 
@@ -1242,6 +1259,9 @@ module.exports = function format(text) {
             }
             from_block = '';
 
+            while ((formatted[formatted.length - 1] || '').trim() === '') {
+                formatted.pop();
+            }
 
             formatted.push('\n;\n\n');
             last_word = ';';

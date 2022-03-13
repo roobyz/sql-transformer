@@ -17,10 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.4] - 2022-03-12
 ### Changed
 - Refactor function (isUpcomingKeyword-->isNextKeyword) to use array for list of values
-- Refactor logic (peekNextKeyword-->isNextKeyword) to make code more DRY abd readable 
+- Refactor logic (peekNextKeyword-->isNextKeyword) to make code more DRY and readable 
 - Remove old function (peekNextKeyword)
 - Reformat margins for COMMENT blocks within functions
-- Wrap closing parenthess on INLINE blocks to existing line
+- Wrap closing parenthesis on INLINE blocks to existing line
 - Adjust formatting for INSERT INTO blocks
 
 ## [0.2.3] - 2022-03-12

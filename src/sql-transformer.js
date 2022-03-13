@@ -152,34 +152,23 @@ function peekNextWord(tokens) {
     return '';
 }
 
-function peekNextKeyword(tokens) {
+function isNextKeyword(tokens, list, steps) {
     /**
      * If the next token is keyword, the upper case of the keyword is returned.
      * 
      * @param {Array} tokens 
      * @returns {String}
      */
-    for (let i = 0; i < tokens.length; i++) {
-        if (isReservedWord(tokens[i])) {
-            return tokens[i].toUpperCase();
-        }
-    }
-    return '';
-}
+    var kwords = 0;
+    var steps = typeof steps != "undefined" ? steps : 0;
 
-function isUpcomingKeyword(tokens, keyword, steps) {
-    /**
-     * If the next token is keyword, the upper case of the keyword is returned.
-     * 
-     * @param {Array} tokens 
-     * @returns {String}
-     */
     for (let i = 0; i < tokens.length; i++) {
         if (isReservedWord(tokens[i])) {
-            if (keyword === tokens[i]) {
+            if (list.includes(tokens[i])) {
                 return true
             }
-            if (i > steps) {
+            kwords += 1;
+            if (kwords > steps) {
                 break;
             }
         }
@@ -334,7 +323,7 @@ module.exports = function format(text) {
         // Process comment blocks.
         if (cwords.includes(keyword) || stack.peek() === 'COMMENT') {
             if (['/*', '{#'].includes(keyword)) {
-                if (peekNextWord(tokens) === 'OUTCOME') {
+                if (isNextKeyword(tokens, ['OUTCOME'])) {
                     last_comment = 'OUTCOME'
                 }
 
@@ -373,11 +362,11 @@ module.exports = function format(text) {
                 // Close the comment
                 formatted.pushItems(' ', word);
 
-                if (['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'JOIN', 'GROUP BY', 'ORDER BY', '('].includes(peekNextKeyword(tokens))) {
-                    if (['SELECT'].includes(peekNextKeyword(tokens)) && last_keyword === '(') {
+                if (isNextKeyword(tokens, ['SELECT', 'CREATE', 'INSERT', 'WITH', 'AS', 'JOIN', 'GROUP BY', 'ORDER BY', '('])) {
+                    if (isNextKeyword(tokens, ['SELECT']) && last_keyword === '(') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
-                    } else if (['WITH'].includes(peekNextKeyword(tokens))) {
+                    } else if (isNextKeyword(tokens, ['WITH'])) {
                         while (stack.length) {
                             if (stack.peek() === 'WITH') {
                                 break;
@@ -387,7 +376,7 @@ module.exports = function format(text) {
 
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
-                    } else if (last_keyword === ')' && [','].includes(peekNextKeyword(tokens))) {
+                    } else if (last_keyword === ')' && isNextKeyword(tokens, [','])) {
                         while (stack.length) {
                             if (stack.peek() === 'WITH') {
                                 break;
@@ -397,7 +386,7 @@ module.exports = function format(text) {
 
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
-                    } else if (last_keyword === ')' && ['SELECT'].includes(peekNextKeyword(tokens))) {
+                    } else if (last_keyword === ')' && isNextKeyword(tokens, ['SELECT'])) {
                         last_comment = ''
                         while (stack.length) {
                             if (stack.peek() === 'WITH') {
@@ -407,7 +396,7 @@ module.exports = function format(text) {
                         }
                         setStack('SELECT', 4)
 
-                    } else if (last_keyword === ',' && ['AS'].includes(peekNextKeyword(tokens))) {
+                    } else if (last_keyword === ',' && isNextKeyword(tokens, ['AS'])) {
                         while (stack.length) {
                             if (stack.peek() === 'WITH') {
                                 break;
@@ -417,7 +406,7 @@ module.exports = function format(text) {
 
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
-                    } else if (['GROUP BY', 'ORDER BY'].includes(peekNextKeyword(tokens))) {
+                    } else if (isNextKeyword(tokens, ['GROUP BY', 'ORDER BY'])) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
                         if (stack.getMargin() === 0) {
                             setStack('BY', 4)
@@ -427,9 +416,9 @@ module.exports = function format(text) {
 
                         }
 
-                    } else if ([','].includes(peekNextKeyword(tokens))) {
-                        // Check for nexted CTE
-                        if (['AS'].includes(peekNextKeyword(tokens))) {
+                    } else if (isNextKeyword(tokens, [','])) {
+                        // Check for nested CTE
+                        if (isNextKeyword(tokens, ['AS'])) {
                             while (stack.length) {
                                 if (stack.peek() === 'WITH') {
                                     break;
@@ -440,7 +429,7 @@ module.exports = function format(text) {
 
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
 
-                    } else if (['('].includes(peekNextKeyword(tokens))) {
+                    } else if (isNextKeyword(tokens, ['('])) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
 
                     } else {
@@ -450,7 +439,7 @@ module.exports = function format(text) {
                 }
 
                 // Set margins for BY block attributes after a COMMENT block
-                if (peekNextKeyword(tokens) === ',' && stack.peek() === 'BY') {
+                if (isNextKeyword(tokens, [',']) && stack.peek() === 'BY') {
                     if (stack.getMargin() === 0) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(8)));
 
@@ -581,7 +570,7 @@ module.exports = function format(text) {
                         stack.pop();
                     }
 
-                    if (['INTO', '(', ')'].includes(last_keyword) && peekNextKeyword(tokens) === 'AS') {
+                    if (['INTO', '(', ')'].includes(last_keyword) && isNextKeyword(tokens, ['AS'])) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
                     }
 
@@ -633,7 +622,7 @@ module.exports = function format(text) {
                     break;
                 case 'LEFT':
                     // Check for left joins
-                    if (['OUTER', 'JOIN'].includes(peekNextKeyword(tokens))) {
+                    if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
 
@@ -648,7 +637,7 @@ module.exports = function format(text) {
                     break;
                 case 'RIGHT':
                     // Check for right function
-                    if (['OUTER', 'JOIN'].includes(peekNextKeyword(tokens))) {
+                    if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
 
@@ -663,7 +652,7 @@ module.exports = function format(text) {
                     break;
                 case 'CROSS':
                     // Check for right function
-                    if (['OUTER', 'JOIN'].includes(peekNextKeyword(tokens))) {
+                    if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
                         if (stack.getMargin() === 0) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)));
 
@@ -687,13 +676,13 @@ module.exports = function format(text) {
 
                     break;
                 case 'INNER':
-                    if (peekNextKeyword(tokens) === 'JOIN') {
+                    if (isNextKeyword(tokens, ['JOIN'])) {
                         continue;
                     }
 
                     break;
                 case 'OUTER':
-                    if (peekNextKeyword(tokens) === 'JOIN') {
+                    if (isNextKeyword(tokens, [ 'JOIN'])) {
                         continue;
                     }
 
@@ -954,7 +943,7 @@ module.exports = function format(text) {
                     if (last_keyword === 'JOIN') {
                         // pass
                     } else if (last_keyword === 'IN') {
-                        if (peekNextKeyword(tokens) !== 'SELECT') {
+                        if (isNextKeyword(tokens, ['SELECT'])) {
                             formatted.push(' ');
                         }
                     } else if (last_keyword === 'AND') {
@@ -980,7 +969,7 @@ module.exports = function format(text) {
                         }
                     }
 
-                    if (peekNextKeyword(tokens) === 'SELECT') {
+                    if (isNextKeyword(tokens, ['SELECT'])) {
                         formatted.push(' ');
 
                     } else if (last_keyword === 'ON') {
@@ -1044,11 +1033,11 @@ module.exports = function format(text) {
                     formatted.push(word);
 
                     // Address functions in the 'BY' stacks
-                    if (stack.peek(-3) === 'BY' && peekNextKeyword(tokens) === ')') {
+                    if (stack.peek(-3) === 'BY' && isNextKeyword(tokens, [')'])) {
                         setStack('BY', 0)
                     }
                     if ((stack.peek(-3) === 'BY' || stack.peek(-2) === 'BY' || stack.peek(-1) === 'BY')
-                        && peekNextKeyword(tokens) === ',') {
+                        && isNextKeyword(tokens, [','])) {
                         while (stack.peek(-1) !== 'BY') {
                             if (stack.peek() === 'WITH') {
                                 break;
@@ -1092,7 +1081,7 @@ module.exports = function format(text) {
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 
-        } else if (keyword === ',' && last_keyword === ')' && peekNextKeyword(tokens) === 'AS') {
+        } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, ['AS'])) {
             while (stack.length) {
                 if (stack.peek() === 'WITH') {
                     break;
@@ -1109,9 +1098,9 @@ module.exports = function format(text) {
             last_word = ','
             continue
 
-        } else if (keyword === ',' && last_keyword === ')' && peekNextKeyword(tokens) === ')') {
+        } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, [')'])) {
             // pass
-        } else if (keyword === ',' && last_keyword === ')' && isUpcomingKeyword(tokens, 'OVER', 3)) {
+        } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, ['OVER'], 3)) {
             while (stack.length) {
                 if (stack.peek() === 'SELECT') {
                     break;
@@ -1149,7 +1138,7 @@ module.exports = function format(text) {
             formatted.push(' ');
 
         } else if (stack.peek() === 'ON') {
-            if (['AND', 'WHERE', 'LEFT', 'RIGHT', 'CROSS', 'JOIN', ')'].includes(peekNextKeyword(tokens))) {
+            if (isNextKeyword(tokens, ['AND', 'WHERE', 'LEFT', 'RIGHT', 'CROSS', 'JOIN', ')'])) {
                 if (stack.peek() !== 'WITH') {
                     stack.pop();
                 }
@@ -1183,13 +1172,13 @@ module.exports = function format(text) {
             } else {
                 formatted.push(' ');
 
-                if (![',', '/*'].includes(peekNextKeyword(tokens))) {
+                if (!isNextKeyword(tokens, [',', '/*'])) {
                     if (stack.peek() !== 'WITH') {
                         stack.pop();
                     }
                 }
 
-                if (peekNextKeyword(tokens) === '(') {
+                if (isNextKeyword(tokens, ['('])) {
                     setStack('BY', 0)
                 }
 

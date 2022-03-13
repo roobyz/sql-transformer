@@ -961,6 +961,9 @@ module.exports = function format(text) {
                         if (isNextKeyword(tokens, ['SELECT'])) {
                             formatted.push(' ');
                         }
+                    } else if (last_primary === 'INTO') {
+                        formatted.pushItems('\n', ' '.repeat(4));
+
                     } else if (last_keyword === 'AND') {
                         // formatted.push(stack.peek());
                     } else if (stack.peek(-1) === 'CREATE') {
@@ -1036,11 +1039,13 @@ module.exports = function format(text) {
 
                         } else if (stack.peek() === 'ON') {
                             stack.pop();
+
                         } else if (popped.type === 'INLINE' && ['AND', 'ON', 'FROM'].includes(last_primary)) {
                             // pass
                         } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
                             formatted.pushItems('\n', ' '.repeat(5));
                             stack.pop();
+
                         } else if (popped.type === 'INLINE') {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
                         }
@@ -1095,7 +1100,7 @@ module.exports = function format(text) {
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 
-        } else if (last_keyword === '(' && stack.peek() === 'INLINE') {
+        } else if (last_keyword === '(' && stack.peek() === 'INLINE' && !last_primary === 'INTO') {
             // pass
 
         } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, ['AS'])) {

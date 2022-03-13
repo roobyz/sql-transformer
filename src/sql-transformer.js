@@ -349,7 +349,7 @@ module.exports = function format(text) {
                         formatted.pop()
                     }
 
-                    if (stack.peek(-2) !== 'FUNCTION'){
+                    if (stack.peek(-2) !== 'FUNCTION') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
 
                     } else {
@@ -488,7 +488,6 @@ module.exports = function format(text) {
 
             } else if (['{{'].includes(keyword)) {
                 if (stack.peek() === 'SELECT') {
-                    // formatted.pushItems('-->', stack.peek(), '<--');
                     formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
                 }
 
@@ -1037,11 +1036,11 @@ module.exports = function format(text) {
 
                         } else if (stack.peek() === 'ON') {
                             stack.pop();
+                        } else if (popped.type === 'INLINE' && ['AND', 'ON', 'FROM'].includes(last_primary)) {
+                            // pass
                         } else if (['INSERT', 'VALUES'].includes(stack.peek(-1))) {
                             formatted.pushItems('\n', ' '.repeat(5));
                             stack.pop();
-                        } else if (popped.type === 'INLINE' && ['AND', 'ON', 'FROM'].includes(last_primary)) {
-                            // pass
                         } else if (popped.type === 'INLINE') {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin() + popped.margin - 1));
                         }
@@ -1092,10 +1091,12 @@ module.exports = function format(text) {
             continue;
         }
 
-
         //  Process identifiers, expressions, .. etc.
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
+
+        } else if (last_keyword === '(' && stack.peek() === 'INLINE') {
+            // pass
 
         } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, ['AS'])) {
             while (stack.length) {

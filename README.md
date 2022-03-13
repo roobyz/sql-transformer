@@ -72,8 +72,10 @@ WITH
            /* * * multi * line * comments * will be compressed into single-line. */
          , max(a.c) AS max_c
          , sum(b.cnt) AS sum_cnt
-         , nvl(cast(max(CASE WHEN a.cnt > 0 AND b.max_v > 0 THEN 'A'
-                             WHEN a.cnt > 0 AND b.max_v < 0 THEN 'B'
+         , nvl(cast(max(CASE WHEN a.cnt > 0
+                              AND b.max_v > 0 THEN 'A'
+                             WHEN a.cnt > 0
+                              AND b.max_v < 0 THEN 'B'
                              WHEN a.cnt < 0 THEN 'C'
                              WHEN a.cnt < 0 THEN 'D'
                              ELSE (SELECT max(CASE WHEN a.k_1 is null THEN 'A'

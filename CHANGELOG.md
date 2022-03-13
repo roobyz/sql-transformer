@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.2.3] - 2022-03-12
+### Added
+- New function (isUpcomingKeyword) for improved stack handling
+
+### Changed
+- Support heavily nested case statements
+- Improved WITH block formatting
+- Adjust AND block margins on WHERE blocks
+- Improve SELECT blocks with OVER functions
+
+### Removed
+- superfluous regex steps
+
 ## [0.2.2] - 2022-03-11
 ### Fixed
 - trim leading whitespaces to process comments

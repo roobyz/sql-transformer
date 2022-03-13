@@ -167,6 +167,27 @@ function peekNextKeyword(tokens) {
     return '';
 }
 
+function isUpcomingKeyword(tokens, keyword, steps) {
+    /**
+     * If the next token is keyword, the upper case of the keyword is returned.
+     * 
+     * @param {Array} tokens 
+     * @returns {String}
+     */
+    for (let i = 0; i < tokens.length; i++) {
+        if (isReservedWord(tokens[i])) {
+            if (keyword === tokens[i]) {
+                return true
+            }
+            if (i > steps) {
+                break;
+            }
+        }
+
+    }
+    return false;
+}
+
 function generateArrayOfNumbers(numbers) {
     var aon = [...Array(numbers).keys()].slice(1)
 
@@ -255,8 +276,8 @@ module.exports = function format(text) {
      * - replace comment lines (-- or //) with comment blocks
      * - remove and carriage returns or new lines
      * - swaps single quotes for backticks
-     * - removes redundant comment block ends
      * - removes any existing `Outcome` comments
+     * - ensure ON is treated as a kwyword
      **/
     const sql = text.replace(
         /^\s*/gm, ''
@@ -272,10 +293,6 @@ module.exports = function format(text) {
         /\s+/g, ' '
     ).replace(
         /[']/g, '`'
-    ).replace(
-        /\*\/ \*\/ \*\//g, '\*\/'
-    ).replace(
-        /\*\/ \*\//g, '\*\/'
     ).replace(
         /\/\* Outcome \*\//g, ''
     ).replace(
@@ -764,8 +781,6 @@ module.exports = function format(text) {
                         if (stack.peek() !== 'WITH') {
                             stack.pop();
                         }
-                    } else if (stack.peek() === 'FUNCTION') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-5)));
 
                     } else if (stack.peek() === 'CASE') {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
@@ -775,6 +790,7 @@ module.exports = function format(text) {
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)));
 
                         } else {
+                            // formatted.pushItems('-->', 'CHK1', '<--');
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(3)));
                         }
                     }
@@ -802,7 +818,6 @@ module.exports = function format(text) {
                         formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('END')));
 
                     } else {
-                        // formatted.pushItems('-->', 'CHK1', '<--');
                         formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine(',') + 4));
 
                     }
@@ -916,6 +931,8 @@ module.exports = function format(text) {
                 if (['1=1AND'].includes(word.replace(/ /g, ''))) {
                     continue
                 }
+                last_keyword = 'AND';
+                last_word = 'AND';
             } else {
                 if (stack.getMargin() === 0) {
                     formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(6)), ' AND');
@@ -923,10 +940,7 @@ module.exports = function format(text) {
                     formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(2)), ' AND');
                 }
             }
-            last_keyword = 'AND';
-            last_word = 'AND';
         }
-
 
         if (['OVER'].includes(last_word)) {
             formatted.push(' ');
@@ -1073,6 +1087,7 @@ module.exports = function format(text) {
             continue;
         }
 
+
         //  Process identifiers, expressions, .. etc.
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
@@ -1096,6 +1111,15 @@ module.exports = function format(text) {
 
         } else if (keyword === ',' && last_keyword === ')' && peekNextKeyword(tokens) === ')') {
             // pass
+        } else if (keyword === ',' && last_keyword === ')' && isUpcomingKeyword(tokens, 'OVER', 3)) {
+            while (stack.length) {
+                if (stack.peek() === 'SELECT') {
+                    break;
+                }
+                stack.pop();
+            }
+            formatted.pushItems('\n', ' '.repeat(stack.getMargin(5)));
+
         } else if (stack.peek() === 'SELECT') {
             // column identifier
             if (keyword === ',') {

@@ -349,7 +349,12 @@ module.exports = function format(text) {
                         formatted.pop()
                     }
 
-                    formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
+                    if (stack.peek(-2) !== 'FUNCTION'){
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
+
+                    } else {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)), word);
+                    }
 
                 }
 
@@ -434,6 +439,17 @@ module.exports = function format(text) {
 
                     } else {
                         formatted.pushItems('\n');
+
+                    }
+                }
+
+                if (isNextKeyword(tokens, [',']) && stack.peek() === 'FUNCTION') {
+                    // formatted.pushItems('-->', stack.peek(), '<--');
+                    if (stack.getMargin() === 0) {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(1)));
+
+                    } else {
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-3)));
 
                     }
                 }
@@ -682,7 +698,7 @@ module.exports = function format(text) {
 
                     break;
                 case 'OUTER':
-                    if (isNextKeyword(tokens, [ 'JOIN'])) {
+                    if (isNextKeyword(tokens, ['JOIN'])) {
                         continue;
                     }
 

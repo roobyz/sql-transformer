@@ -28,12 +28,12 @@ formatted by `SQL Transformer`.
 
 ```sql
 INSERT INTO target_tab
-     ( monthly
-     , a
-     , max_b
-     , max_c
-     , sum_cnt
-     , some_case
+    ( monthly
+    , a
+    , max_b
+    , max_c
+    , sum_cnt
+    , some_case
      )
 WITH
     cte_1 AS (SELECT a.k_1
@@ -85,10 +85,9 @@ WITH
                                      FROM cte_1 a
                                     WHERE 1=1
                                       AND a.max_col > 120
-                                      AND a.type IN (SELECT type
-                                                       FROM tab_t)
-                                      AND a.type IN ('A', 'B', 'C', 'D')
-                                  )
+                                      AND a.type IN  (SELECT type
+                                                        FROM tab_t)
+                                      AND a.type IN('A', 'B', 'C', 'D'))
                         END) AS STRING), '') AS some_case
       FROM (SELECT a.k
                    /* Reserved words in comments are treated as comments. */

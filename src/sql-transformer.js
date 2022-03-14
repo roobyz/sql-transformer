@@ -779,7 +779,13 @@ module.exports = function format(text) {
                     break;
                 case 'OR':
                     if (stack.peek() === 'FUNCTION') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(-4)));
+                        if (stack.getMargin() === 4) {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(4)));
+
+                        } else {
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(-4)));
+
+                        }
 
                     } else {
                         formatted.push(' ');
@@ -955,11 +961,11 @@ module.exports = function format(text) {
         // Add where 1=1, if not included
         if (last_word === 'WHERE') {
             if (['1=1', '1=1AND'].includes(word.replace(/ /g, ''))) {
+                last_keyword = 'AND';
+                last_word = 'AND';
                 if (['1=1AND'].includes(word.replace(/ /g, ''))) {
                     continue
                 }
-                last_keyword = 'AND';
-                last_word = 'AND';
             } else {
                 if (stack.getMargin() === 0) {
                     formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(6)), ' AND');
@@ -987,8 +993,8 @@ module.exports = function format(text) {
                     } else if (last_primary === 'INTO') {
                         formatted.pushItems('\n', ' '.repeat(4));
 
-                    } else if (last_keyword === 'AND') {
-                        // formatted.push(stack.peek());
+                    } else if (['AND', 'WHERE'].includes(last_keyword)) {
+                        // pass
                     } else if (stack.peek(-1) === 'CREATE') {
                         if (last_keyword === 'FROM') {
                             // pass

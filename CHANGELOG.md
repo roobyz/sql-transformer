@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [0.2.6] - 2022-03-13
+### Changed
+- Tweak COMMENT margins for ON blocks
+- Refactor for clarity
+- Remove extra spacing
+- Adjust margins for comparisons with comments in between
 
 ## [0.2.5] - 2022-03-12
 ### Changed

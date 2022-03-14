@@ -262,10 +262,10 @@ module.exports = function format(text) {
     /**
      * Regex steps:
      * - trim any leading whitespaces on each line
-     * - replace comment lines (-- or //) with comment blocks
-     * - remove and carriage returns or new lines
-     * - swaps single quotes for backticks
-     * - removes any existing `Outcome` comments
+     * - convert dash or slash comment (-- or //) to comment blocks
+     * - remove any carriage returns or new lines
+     * - replace single quotes with backticks
+     * - remove any existing `Outcome` comments
      * - ensure ON is treated as a kwyword
      **/
     const sql = text.replace(
@@ -309,6 +309,7 @@ module.exports = function format(text) {
     let last_primary = '';
     let from_block = '';
     let case_block = false;
+    let output = '';
 
     while (tokens.length) {
         const word = tokens.shift(); // Remove next item from the beginning of token array
@@ -1277,5 +1278,25 @@ module.exports = function format(text) {
     }
 
     // revert backticks to single quotes on the final string
-    return formatted.join('').replace(/[`]/g, "'");
+    if (false) {
+        // Output dash comments ('--')
+        output = formatted.join(''
+        ).replace(
+            /[`]/g, "'"
+        ).replace(
+            /(.*)([/][*])(.*)([ ][*][/])/g, "$1-- $3"
+        ).replace(
+            /(.*)([/][*])(.*)([ ])/g, '$1-- $3'
+        ).replace(
+            /(.*)([/][*])/g, '$1--'
+        );
+
+    } else {
+        // Output comment blocks (/* */)
+        output = formatted.join('').replace(/[`]/g, "'");
+
+    }
+
+    return output;
+
 }

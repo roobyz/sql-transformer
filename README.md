@@ -119,7 +119,7 @@ WITH
            ) b
         ON a.k = b.k
   GROUP BY 1, 2
-  ORDER BY 1, 2 
+  ORDER BY 1, 2
 ;
 ```
 

@@ -605,6 +605,12 @@ module.exports = function format(text) {
 
                     if (['INTO', '(', ')'].includes(last_keyword) && isNextKeyword(tokens, ['AS'])) {
                         formatted.pushItems('\n', ' '.repeat(stack.getMargin()));
+
+                    } else if ([';'].includes(last_keyword)) {
+                        formatted.push('')
+
+                    } else {
+                        formatted.push(' ');
                     }
 
                     setStack('WITH', 4)

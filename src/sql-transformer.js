@@ -442,7 +442,11 @@ module.exports = function format(text) {
                         }
 
                     } else if (isNextKeyword(tokens, ['('])) {
-                        formatted.pushItems(' '.repeat(stack.getMargin(6)));
+                        while ((formatted[formatted.length - 1] || '').trim() === '') {
+                            formatted.pop();
+                        }
+
+                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(6)));
 
                     } else {
                         if ((formatted[formatted.length - 1] || '').trim() === '*/') {
@@ -577,9 +581,6 @@ module.exports = function format(text) {
 
                         }
                     } else {
-                        // while ((formatted[formatted.length - 1] || '').trim() === '') {
-                        //     formatted.pop();
-                        // }
                         formatted.pushItems(' '.repeat(stack.getMargin()));
 
                     }

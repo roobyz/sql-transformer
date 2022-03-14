@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [0.2.7] - 2022-03-14
+### Fixed
+- Ensure that WITH keywords stay keywords
+
 ## [0.2.6] - 2022-03-13
 ### Changed
 - Tweak COMMENT margins for ON blocks

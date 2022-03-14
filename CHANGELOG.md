@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [0.2.8] - 2022-03-14
+### Changed
+- Adjust formatting for OR and AND keywords in a WHERE block
+
 ## [0.2.7] - 2022-03-14
 ### Fixed
 - Ensure that WITH keywords stay keywords

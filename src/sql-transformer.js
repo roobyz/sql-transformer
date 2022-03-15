@@ -961,11 +961,11 @@ module.exports = function format(text) {
         // Add where 1=1, if not included
         if (last_word === 'WHERE') {
             if (['1=1', '1=1AND'].includes(word.replace(/ /g, ''))) {
-                last_keyword = 'AND';
-                last_word = 'AND';
                 if (['1=1AND'].includes(word.replace(/ /g, ''))) {
                     continue
                 }
+                last_keyword = 'AND';
+                last_word = 'AND';
             } else {
                 if (stack.getMargin() === 0) {
                     formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(6)), ' AND');

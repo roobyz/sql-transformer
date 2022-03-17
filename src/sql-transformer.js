@@ -736,7 +736,12 @@ module.exports = function format(text) {
 
                     break;
                 case 'WHERE':
-                    setMargin(0, 5, 1)
+                    if (stack.peek() === 'JOIN') {
+                        setMargin(0, 5, -1)
+
+                    } else {
+                        setMargin(0, 5, 1)
+                    }
 
                     break;
                 case 'OR':
@@ -768,6 +773,9 @@ module.exports = function format(text) {
 
                     } else if (stack.peek() === 'CASE') {
                         setMargin(0, 5, 5);
+
+                    } else if (stack.peek() === 'JOIN') {
+                        setMargin(0, 5, 1)
 
                     } else {
                         setMargin(0, 7, 3);
@@ -817,7 +825,8 @@ module.exports = function format(text) {
 
                     break;
                 case 'THEN':
-                    if (stack.peek() == 'CASE' && formatted.getCurrentPosition() > 80) {
+                    // formatted.pushItems('-->', stack.peek(), '--');
+                    if (['CASE', 'FUNCTION'].includes(stack.peek()) && formatted.getCurrentPosition() > 60) {
                         setMargin(0, 4, 4);
 
                     } else {
@@ -831,7 +840,8 @@ module.exports = function format(text) {
 
                     break;
                 case 'END':
-                    setMargin(0, -1, -1);
+                    formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('WHEN') - 5));
+                    // setMargin(0, -1, -1);
                     if (stack.peek() !== 'WITH') {
                         stack.pop();
                         if (stack.peek() === 'CASE' || stack.peek(-1) === 'CASE' || stack.peek(-2) === 'CASE' || stack.peek(-3) === 'CASE') {
@@ -857,8 +867,10 @@ module.exports = function format(text) {
 
                     break;
                 case 'BETWEEN':
-                    setStack('BETWEEN', 0)
-                    formatted.push(' ');
+                    if (isNextKeyword(tokens, ['AND'])) {
+                        setStack('BETWEEN', 0)
+                        formatted.push(' ');
+                    }
 
                     break;
                 case 'GROUP BY':
@@ -1142,6 +1154,10 @@ module.exports = function format(text) {
 
         } else if (['WHERE', 'AND', 'BETWEEN', 'WHEN', 'THEN', 'ELSE', 'AS', 'END', 'HAVING', ')', 'INTO', 'OVERWRITE'].includes(last_keyword)) {
             if (word.includes('::')) {
+                //
+            } else if (word.includes(',') && last_keyword === 'END') {
+                setMargin(0, 0, 5)
+
             } else {
                 formatted.push(' ');
             }

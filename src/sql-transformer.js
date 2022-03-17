@@ -285,7 +285,11 @@ module.exports = function format(text) {
     ).replace(
         /\/\* Outcome \*\//g, ''
     ).replace(
+        /THEN\(/g, 'THEN ('
+    ).replace(
         /ON\(/g, 'ON ('
+    ).replace(
+        /AND\(/g, 'AND ('
     );
 
     const tokens = tokenize(sql);
@@ -813,7 +817,13 @@ module.exports = function format(text) {
 
                     break;
                 case 'THEN':
-                    formatted.pushItems(' ');
+                    if (stack.peek() == 'CASE' && formatted.getCurrentPosition() > 80) {
+                        setMargin(0, 4, 4);
+
+                    } else {
+                        formatted.push(' ');
+
+                    }
 
                     break;
                 case 'ELSE':
@@ -831,6 +841,7 @@ module.exports = function format(text) {
 
                         }
                     }
+                    // formatted.pushItems('-->', stack.peek(), '--');
 
                     break;
                 case 'HAVING':

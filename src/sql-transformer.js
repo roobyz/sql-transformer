@@ -1065,6 +1065,22 @@ module.exports = function format(text) {
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 
+        } else if (last_primary === 'FROM') {
+            // account for NON-ANSI SQL joins
+            if (keyword === ',') {
+                if (last_keyword === 'FROM') {
+                    setMargin(0, 5, 5)
+
+                } else {
+                    setMargin(0, 4, 4)
+
+                }
+            }
+
+            if (last_keyword === ',') {
+                formatted.push(' ');
+            }
+
         } else if (last_keyword === '(' && stack.peek() === 'INLINE' && last_primary !== 'INTO') {
             // pass
         } else if (last_keyword === '(' && stack.peek() === 'FUNCTION') {

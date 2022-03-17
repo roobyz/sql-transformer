@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [0.2.11] - 2022-03-17
+### Changed
+- Updated README with known issue
+
 ## [0.2.10] - 2022-03-16
 ### Changed
 - Implement setMargin function to make code more DRY and readable

@@ -16,6 +16,10 @@ The code is heavily commented in case you are eager to understand how it works, 
    * Windows: `Shift` + `Alt` + `T`
    * Mac: `Shift` + `Ctrl` + `T`
 
+## Known Issue
+
+* Currently does not handle comments at the end of a line. As an interim solution, please ensure your comments are on their own separate lines.
+
 ## Todo
 
 Update and enhance as necessary to:
@@ -78,8 +82,10 @@ WITH
                               AND b.max_v < 0 THEN 'B'
                              WHEN a.cnt < 0 THEN 'C'
                              WHEN a.cnt < 0 THEN 'D'
-                             ELSE (SELECT max(CASE WHEN a.k_1 is null THEN 'A'
-                                                   WHEN a.k_1 > 'V' THEN 'A'
+                             ELSE (SELECT max(CASE WHEN a.k_1 is null
+                                                   THEN 'A'
+                                                   WHEN a.k_1 > 'V'
+                                                   THEN 'A'
                                                    ELSE 'B'
                                               END) AS v
                                      FROM cte_1 a
@@ -88,7 +94,7 @@ WITH
                                       AND a.type IN  (SELECT type
                                                         FROM tab_t)
                                       AND a.type IN('A', 'B', 'C', 'D'))
-                        END) AS STRING), '') AS some_case
+                                              END) AS STRING), '') AS some_case
       FROM (SELECT a.k
                    /* Reserved words in comments are treated as comments. */
                  , b.v

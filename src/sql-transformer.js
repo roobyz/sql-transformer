@@ -776,6 +776,9 @@ module.exports = function format(text) {
                             formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('AND') + 4));
                         }
 
+                    } else if (['ELSE'].includes(last_word)) {
+                        formatted.push(' ');
+
                     } else if ([','].includes(last_keyword)) {
                         formatted.push(' ');
 
@@ -917,6 +920,7 @@ module.exports = function format(text) {
                         if (isNextKeyword(tokens, ['SELECT'])) {
                             formatted.push(' ');
                         }
+
                     } else if (last_primary === 'INTO') {
                         formatted.pushItems('\n', ' '.repeat(4));
 
@@ -1052,8 +1056,11 @@ module.exports = function format(text) {
 
         } else if (last_keyword === '(' && stack.peek() === 'INLINE' && last_primary !== 'INTO') {
             // pass
+        } else if (last_keyword === '(' && stack.peek() === 'FUNCTION') {
+            // pass
+            // formatted.pushItems('-->', 'chk0', '--');
 
-        } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, ['AS'])) {
+        } else if (last_keyword === ')' && keyword === ',' && isNextKeyword(tokens, ['AS'])) {
             while (stack.length) {
                 if (stack.peek() === 'WITH') {
                     break;
@@ -1071,9 +1078,9 @@ module.exports = function format(text) {
             last_word = ','
             continue
 
-        } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, [')'])) {
+        } else if (last_keyword === ')' && keyword === ',' && isNextKeyword(tokens, [')'])) {
             // pass
-        } else if (keyword === ',' && last_keyword === ')' && isNextKeyword(tokens, ['OVER'], 3)) {
+        } else if (last_keyword === ')' && keyword === ',' && isNextKeyword(tokens, ['OVER'], 3)) {
             while (stack.length) {
                 if (stack.peek() === 'SELECT') {
                     break;
@@ -1107,7 +1114,10 @@ module.exports = function format(text) {
             formatted.push(' ');
 
         } else if (['WHERE', 'AND', 'BETWEEN', 'WHEN', 'THEN', 'ELSE', 'AS', 'END', 'HAVING', ')', 'INTO', 'OVERWRITE'].includes(last_keyword)) {
-            formatted.push(' ');
+            if (word.includes('::')) {
+            } else {
+                formatted.push(' ');
+            }
 
         } else if (stack.peek() === 'ON') {
             if (isNextKeyword(tokens, ['AND', 'WHERE', 'LEFT', 'RIGHT', 'CROSS', 'JOIN', ')'])) {

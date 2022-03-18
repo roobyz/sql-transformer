@@ -6,7 +6,7 @@ Transform your SQL!
 
 `SQL Transformer` formats SQL to more organized and readable code. Heavy focus was made on improving developer productivity and clarity. It works with common table expressions (CTEs) as well as complicated inline SQL.
 
-The code is heavily commented in case you are eager to understand how it works, or want to make updates or contributions.
+The code is heavily commented in case you are eager to understand how it works, or want to make updates or contributions. This has been tested with SQL that ranges from tens of lines to thousands of lines of SQL containing complex CTE and inline logic.
 
 ## Usage
 
@@ -16,13 +16,10 @@ The code is heavily commented in case you are eager to understand how it works, 
    * Windows: `Shift` + `Alt` + `T`
    * Mac: `Shift` + `Ctrl` + `T`
 
-## Known Issue
-
-* Currently does not handle comments at the end of a line. As an interim solution, please ensure your comments are on their own separate lines.
-
 ## Todo
 
 Update and enhance as necessary to:
+* include VSCode user settings for adjusting output preferences
 * improve Snowflake SQL compatibility
 * work seamlessly with DBT (Data Build Tool)
 
@@ -94,7 +91,7 @@ WITH
                                       AND a.type IN  (SELECT type
                                                         FROM tab_t)
                                       AND a.type IN('A', 'B', 'C', 'D'))
-                                              END) AS STRING), '') AS some_case
+                        END) AS STRING), '') AS some_case
       FROM (SELECT a.k
                    /* Reserved words in comments are treated as comments. */
                  , b.v

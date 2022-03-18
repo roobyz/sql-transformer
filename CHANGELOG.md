@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [0.3.1] - 2022-03-18
+### Changed
+- Adjust ELSE/END margins in CASE blocks
+- Adjust FROM margin after COMMENT
+
+### Fixed
+- Resolve known issue: comments at end of a line
+- Address words with apostrophes in comment blocks
+
 ## [0.2.11] - 2022-03-17
 ### Changed
 - Updated README with known issue

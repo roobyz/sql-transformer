@@ -264,7 +264,7 @@ module.exports = function format(text) {
      * - trim any leading whitespaces on each line
      * - convert dash or slash comment (-- or //) to comment blocks (including at end of line)
      * - remove any carriage returns or new lines
-     * - replace single quotes with backticks
+     * - replace single quotes with backticks for apostrophes ONLY within comment blocks
      * - remove any existing `Outcome` comments
      * - ensure THEN/ON/OR/AND are treated as a kwywords
      **/
@@ -281,11 +281,11 @@ module.exports = function format(text) {
     ).replace(
         /(.*)(?<!\/\*)(\/\/{1,}\1+)(?!(.*\*\/))(.*)/g, ' /* $4 */'
     ).replace(
+        /(?<=\/\*)(.*)(\w)(')(\w)(.*)(?=\*\/)/g, '$1$2`$4$5'
+    ).replace(
         /(\r\n|\r|\n)/g, ' '
     ).replace(
         /\s+/g, ' '
-    ).replace(
-        /[']/g, '`'
     ).replace(
         /\/\* Outcome \*\//g, ''
     ).replace(
@@ -297,6 +297,7 @@ module.exports = function format(text) {
     ).replace(
         /AND\(/g, 'AND ('
     );
+    // USF-BAY N GULF-SAVE
 
     const tokens = tokenize(sql);
     const stack = new CustomArray();
@@ -416,7 +417,7 @@ module.exports = function format(text) {
                     while ((formatted[formatted.length - 1] || '').trim() === '') {
                         formatted.pop();
                     }
-                    
+
                     if (!isNextKeyword(tokens, ['SELECT', '('], 1)) {
                         if (stack.peek() === 'ON') {
                             stack.pop();
@@ -1281,7 +1282,7 @@ module.exports = function format(text) {
 
     } else {
         // Output comment blocks (/* */)
-        output = formatted.join('').replace(/[`]/g, "'");
+        output = formatted.join('').replace(/(?<=\/\*)(.*)(\w)(`)(\w)(.*)(?=\*\/)/g, "$1$2'$4$5");
 
     }
     // formatted.pushItems('-->', 'chk0', '<--');

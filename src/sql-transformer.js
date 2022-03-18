@@ -266,7 +266,7 @@ module.exports = function format(text) {
      * - remove any carriage returns or new lines
      * - replace single quotes with backticks
      * - remove any existing `Outcome` comments
-     * - ensure ON is treated as a kwyword
+     * - ensure THEN/ON/OR/AND are treated as a kwywords
      **/
     const sql = text.replace(
         /^\s*/gm, ''
@@ -292,6 +292,8 @@ module.exports = function format(text) {
         /THEN\(/g, 'THEN ('
     ).replace(
         /ON\(/g, 'ON ('
+    ).replace(
+        /OR\(/g, 'OR ('
     ).replace(
         /AND\(/g, 'AND ('
     );
@@ -394,6 +396,10 @@ module.exports = function format(text) {
                     } else if (['INSERT', 'CREATE'].includes(peekNextWord(tokens))) {
                         setMargin(0, 0, 0);
 
+                    } else if (last_keyword === 'FROM') {
+                        // pass
+                        setMargin(0, 0, 6);
+
                     } else if (kwords.includes(peekNextWord(tokens))) {
                         // pass
 
@@ -407,6 +413,10 @@ module.exports = function format(text) {
                 }
 
                 if (isNextKeyword(tokens, ['JOIN'], 1)) {
+                    while ((formatted[formatted.length - 1] || '').trim() === '') {
+                        formatted.pop();
+                    }
+                    
                     if (!isNextKeyword(tokens, ['SELECT', '('], 1)) {
                         if (stack.peek() === 'ON') {
                             stack.pop();

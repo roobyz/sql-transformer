@@ -262,7 +262,7 @@ module.exports = function format(text) {
     /**
      * Regex steps:
      * - trim any leading whitespaces on each line
-     * - convert dash or slash comment (-- or //) to comment blocks
+     * - convert dash or slash comment (-- or //) to comment blocks (including at end of line)
      * - remove any carriage returns or new lines
      * - replace single quotes with backticks
      * - remove any existing `Outcome` comments
@@ -825,7 +825,6 @@ module.exports = function format(text) {
 
                     break;
                 case 'THEN':
-                    // formatted.pushItems('-->', stack.peek(), '--');
                     if (['CASE', 'FUNCTION'].includes(stack.peek()) && formatted.getCurrentPosition() > 60) {
                         setMargin(0, 4, 4);
 
@@ -836,12 +835,11 @@ module.exports = function format(text) {
 
                     break;
                 case 'ELSE':
-                    formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('WHEN')));
+                    setMargin(0, 4, 4)
 
                     break;
                 case 'END':
-                    formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('WHEN') - 5));
-                    // setMargin(0, -1, -1);
+                    setMargin(0, -1, -1)
                     if (stack.peek() !== 'WITH') {
                         stack.pop();
                         if (stack.peek() === 'CASE' || stack.peek(-1) === 'CASE' || stack.peek(-2) === 'CASE' || stack.peek(-3) === 'CASE') {
@@ -851,7 +849,6 @@ module.exports = function format(text) {
 
                         }
                     }
-                    // formatted.pushItems('-->', stack.peek(), '--');
 
                     break;
                 case 'HAVING':
@@ -1097,8 +1094,6 @@ module.exports = function format(text) {
             // pass
         } else if (last_keyword === '(' && stack.peek() === 'FUNCTION') {
             // pass
-            // formatted.pushItems('-->', 'chk0', '--');
-
         } else if (last_keyword === ')' && keyword === ',' && isNextKeyword(tokens, ['AS'])) {
             while (stack.length) {
                 if (stack.peek() === 'WITH') {
@@ -1275,6 +1270,9 @@ module.exports = function format(text) {
         output = formatted.join('').replace(/[`]/g, "'");
 
     }
+    // formatted.pushItems('-->', 'chk0', '<--');
+    // formatted.pushItems('-->', stack.peek(), '<--');
+    // formatted.pushItems('-->', stack.getMargin(), '<--');
 
     return output;
 

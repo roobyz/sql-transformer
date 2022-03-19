@@ -253,27 +253,72 @@ function tokenize(sql) {
     return tokens;
 }
 
-module.exports = function format(text) {
+function commentBlocks(sql) {
     /**
-     * @param {String} text 
+     * Returns SQL with multi-line comment blocks
+     * 
+     * @param {String} sql 
      * @returns {String}
      */
 
+    var regex = /(?<=\/\*)([\s\S]*?)(?=\*\/)/gm;
+    var cblocks = sql.split(regex);
+
+    const nblock = cblocks.map(cItem => {
+        var ctype = '';
+        var ntype = '';
+        var ttype = '';
+
+        if (cItem.substr(0, 2) !== '*/' && cItem.slice(-2) === '/*') {
+            // Process non-comments
+            if (cItem.slice(0, -2).trim() === '') {
+                ntype = ''
+            } else {
+                ntype = cItem.slice(0, -2).trim()
+            }
+
+        } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) === '/*') {
+            // Process non-comments
+            ntype = cItem.substr(2).slice(0, -2)
+
+        } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) !== '/*') {
+            // Process non-comments
+            ntype = cItem.substr(2)
+
+        } else {
+            // Process comments
+            ctype = cItem.split(/(\r\n|\r|\n)/g).map(tItem => {
+                if (tItem === '') {
+                    ttype = ''
+                } else {
+                    ttype = tItem.replace(/(\r|\n)/g, ' ')
+
+                }
+
+                if (ttype.trim() === '') {
+                    ttype = ''
+                } else {
+                    ttype = '/* ' + ttype + ' */\n'
+                }
+
+                return ttype
+            });
+
+            ntype = ctype.join('')
+        }
+
+        return ntype
+    })
+
     /**
-     * Regex steps:
-     * - trim any leading whitespaces on each line
-     * - convert dash or slash comment (-- or //) to comment blocks (including at end of line)
-     * - remove any carriage returns or new lines
-     * - replace single quotes with backticks for apostrophes ONLY within comment blocks
-     * - remove any existing `Outcome` comments
-     * - ensure THEN/ON/OR/AND are treated as a kwywords
+     * Returns:
+     * - multi-line COMMENT blocks
+     * - without any leading whitespaces on each line
+     * - all dash or slash comment (-- or //) converted to comment blocks
+     * - replace apostrophes within COMMENT BLOCKS, with backticks
      **/
-    const sql = text.replace(
+    return nblock.join('').replace(
         /^\s*/gm, ''
-    ).replace(
-        /^--(.*)/gm, '/* $1 */'
-    ).replace(
-        /^\/\/(.*)/gm, '/* $1 */'
     ).replace(
         /([^{#])(.*)([/][*])(.*)([*][/])(.*)([#][}])/g, '$4$6$7'
     ).replace(
@@ -282,7 +327,24 @@ module.exports = function format(text) {
         /(.*)(?<!\/\*)(\/\/{1,}\1+)(?!(.*\*\/))(.*)/g, ' /* $4 */'
     ).replace(
         /(?<=\/\*)(.*)(\w)(')(\w)(.*)(?=\*\/)/g, '$1$2`$4$5'
-    ).replace(
+    );
+}
+
+module.exports = function format(text) {
+    /**
+     * @param {String} text 
+     * @returns {String}
+     */
+
+    /**
+     * Regex steps:
+     * - Process COMMENT blocks
+     * - trim any leading whitespaces on each line
+     * - remove any carriage returns or new lines
+     * - remove any existing `Outcome` COMMENT blocks
+     * - ensure THEN/ON/OR/AND are treated as a kwywords
+     **/
+    const sql = commentBlocks(text).replace(
         /(\r\n|\r|\n)/g, ' '
     ).replace(
         /\s+/g, ' '
@@ -297,7 +359,6 @@ module.exports = function format(text) {
     ).replace(
         /AND\(/g, 'AND ('
     );
-    // USF-BAY N GULF-SAVE
 
     const tokens = tokenize(sql);
     const stack = new CustomArray();

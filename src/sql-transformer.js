@@ -1355,18 +1355,14 @@ module.exports = function format(text) {
 
     }
 
-    // revert backticks to single quotes on the final string
+    // revert backticks to apostrophes in comment blocks
     if (false) {
         // Output dash comments ('--')
         output = formatted.join(''
         ).replace(
-            /[`]/g, "'"
+            /(?<=\/\*)(.*)(\w)(`)(\w)(.*)(?=\*\/)/g, "$1$2'$4$5"
         ).replace(
             /(.*)([/][*])(.*)([ ][*][/])/g, "$1-- $3"
-        ).replace(
-            /(.*)([/][*])(.*)([ ])/g, '$1-- $3'
-        ).replace(
-            /(.*)([/][*])/g, '$1--'
         );
 
     } else {

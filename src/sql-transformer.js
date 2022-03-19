@@ -128,6 +128,9 @@ function isReservedWord(word) {
     return rwords.includes(word.toUpperCase());
 }
 
+// ----------------------------------------------------------------------------
+// What: Function to check for mathematical operators
+// Why:  Control spacing for calculations
 function isOperater(word) {
     let shouldSkip = false;
     owords.forEach(operator => {
@@ -139,6 +142,9 @@ function isOperater(word) {
     return shouldSkip;
 }
 
+// ----------------------------------------------------------------------------
+// What: Function to retrieve the upcoming word
+// Why:  Set margins based on word boundaries
 function peekNextWord(tokens) {
     /**
      * the upper case of the next word is returned.
@@ -152,6 +158,10 @@ function peekNextWord(tokens) {
     return '';
 }
 
+// ----------------------------------------------------------------------------
+// What: Function to check future keyword matches 
+// Why:  Process margins with context of keyword placement
+// How:  Check tokens against array, up to the specified keyword steps forward
 function isNextKeyword(tokens, list, steps) {
     /**
      * If the next token is keyword, the upper case of the keyword is returned.
@@ -177,12 +187,107 @@ function isNextKeyword(tokens, list, steps) {
     return false;
 }
 
+// ----------------------------------------------------------------------------
+// What: Function generate group by integers 
+// Why:  Control group by formatting by integers
 function generateArrayOfNumbers(numbers) {
     var aon = [...Array(numbers).keys()].slice(1)
 
     return aon.map(String)
 }
 
+// ----------------------------------------------------------------------------
+// What: Function to transform all comments into comment blocks
+// Why:  Returns SQL with consistent comment blocks
+// How:  Use comment block boundaries to correctly process SQL blocks
+function commentBlocks(sql) {
+    /**
+     * Returns SQL with multi-line comment blocks
+     * 
+     * @param {String} sql 
+     * @returns {String}
+     */
+
+    // Capture each multi-line comment within a comment block
+    // and split them on their boundaries (brackets)
+    var regex = /(?<=\/\*)([\s\S]*?)(?=\*\/)/gm;
+    var cblocks = sql.split(regex);
+
+    // Convert multi-line comment blocks into multiple line comment blocks
+    const nblock = cblocks.map(cItem => {
+        var ctype = '';
+        var ntype = '';
+        var ttype = '';
+
+        if (cItem.substr(0, 2) !== '*/' && cItem.slice(-2) === '/*') {
+            // Process non-comments with trailing bracket
+            if (cItem.slice(0, -2).trim() === '') {
+                ntype = ''
+            } else {
+                ntype = cItem.slice(0, -2).trim()
+            }
+
+        } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) === '/*') {
+            // Process non-comments with both brackets
+            ntype = cItem.substr(2).slice(0, -2)
+
+        } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) !== '/*') {
+            // Process non-comments with leading brackets
+            ntype = cItem.substr(2)
+
+        } else {
+            // Process the comments:
+            // * Split multiple comment lines into an array
+            // * Convert each item into comment blocks
+            ctype = cItem.split(/(\r\n|\r|\n)/g).map(tItem => {
+                if (tItem === '') {
+                    ttype = ''
+                } else {
+                    ttype = tItem.replace(/(\r|\n)/g, ' ')
+
+                }
+
+                // Remove any empty lines
+                if (ttype.trim() === '') {
+                    ttype = ''
+                } else {
+                    ttype = '/* ' + ttype + ' */\n'
+                }
+
+                return ttype
+            });
+
+            // Return multiple line comments
+            ntype = ctype.join('')
+        }
+
+        return ntype
+    })
+
+    /**
+     * Returns:
+     * - SQL with multiple line COMMENT blocks
+     * - without any leading whitespaces on each line
+     * - all dash or slash comment (-- or //) converted to comment blocks
+     * - swap apostrophes within COMMENT BLOCKS into backticks
+     **/
+    return nblock.join('').replace(
+        /^\s*/gm, ''
+    ).replace(
+        /([^{#])(.*)([/][*])(.*)([*][/])(.*)([#][}])/g, '$4$6$7'
+    ).replace(
+        /(.*)(?<!\/\*)(--{1,}\1+)(?!(.*\*\/))(.*)/g, ' /* $4 */'
+    ).replace(
+        /(.*)(?<!\/\*)(\/\/{1,}\1+)(?!(.*\*\/))(.*)/g, ' /* $4 */'
+    ).replace(
+        /(?<=\/\*)(.*)(\w)(')(\w)(.*)(?=\*\/)/g, '$1$2`$4$5'
+    );
+}
+
+// ----------------------------------------------------------------------------
+// What: Process SQL text from editor window into tokens
+// Why:  Use tokens to transform editor SQL into formated SQL text
+// How:  Use tokens to generate keywords, words, and comment tokens
 function tokenize(sql) {
     /**
      * Tokenizes the given sql and returns a list of tokens. 
@@ -253,83 +358,6 @@ function tokenize(sql) {
     return tokens;
 }
 
-function commentBlocks(sql) {
-    /**
-     * Returns SQL with multi-line comment blocks
-     * 
-     * @param {String} sql 
-     * @returns {String}
-     */
-
-    var regex = /(?<=\/\*)([\s\S]*?)(?=\*\/)/gm;
-    var cblocks = sql.split(regex);
-
-    const nblock = cblocks.map(cItem => {
-        var ctype = '';
-        var ntype = '';
-        var ttype = '';
-
-        if (cItem.substr(0, 2) !== '*/' && cItem.slice(-2) === '/*') {
-            // Process non-comments
-            if (cItem.slice(0, -2).trim() === '') {
-                ntype = ''
-            } else {
-                ntype = cItem.slice(0, -2).trim()
-            }
-
-        } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) === '/*') {
-            // Process non-comments
-            ntype = cItem.substr(2).slice(0, -2)
-
-        } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) !== '/*') {
-            // Process non-comments
-            ntype = cItem.substr(2)
-
-        } else {
-            // Process comments
-            ctype = cItem.split(/(\r\n|\r|\n)/g).map(tItem => {
-                if (tItem === '') {
-                    ttype = ''
-                } else {
-                    ttype = tItem.replace(/(\r|\n)/g, ' ')
-
-                }
-
-                if (ttype.trim() === '') {
-                    ttype = ''
-                } else {
-                    ttype = '/* ' + ttype + ' */\n'
-                }
-
-                return ttype
-            });
-
-            ntype = ctype.join('')
-        }
-
-        return ntype
-    })
-
-    /**
-     * Returns:
-     * - multi-line COMMENT blocks
-     * - without any leading whitespaces on each line
-     * - all dash or slash comment (-- or //) converted to comment blocks
-     * - replace apostrophes within COMMENT BLOCKS, with backticks
-     **/
-    return nblock.join('').replace(
-        /^\s*/gm, ''
-    ).replace(
-        /([^{#])(.*)([/][*])(.*)([*][/])(.*)([#][}])/g, '$4$6$7'
-    ).replace(
-        /(.*)(?<!\/\*)(--{1,}\1+)(?!(.*\*\/))(.*)/g, ' /* $4 */'
-    ).replace(
-        /(.*)(?<!\/\*)(\/\/{1,}\1+)(?!(.*\*\/))(.*)/g, ' /* $4 */'
-    ).replace(
-        /(?<=\/\*)(.*)(\w)(')(\w)(.*)(?=\*\/)/g, '$1$2`$4$5'
-    );
-}
-
 module.exports = function format(text) {
     /**
      * @param {String} text 
@@ -342,7 +370,7 @@ module.exports = function format(text) {
      * - trim any leading whitespaces on each line
      * - remove any carriage returns or new lines
      * - remove any existing `Outcome` COMMENT blocks
-     * - ensure THEN/ON/OR/AND are treated as a kwywords
+     * - ensure THEN/ON/OR/AND are treated as a keywords
      **/
     const sql = commentBlocks(text).replace(
         /(\r\n|\r|\n)/g, ' '
@@ -383,14 +411,14 @@ module.exports = function format(text) {
         }
     }
 
-    let keyword = '';
-    let last_word = '';
-    let last_keyword = '';
-    let last_comment = '';
-    let last_primary = '';
-    let from_block = '';
-    let case_block = false;
-    let output = '';
+    let keyword = '';       // Any keyword
+    let last_word = '';     // Any word (including keywords)
+    let last_keyword = '';  // Prior keyword
+    let last_comment = '';  // Track OUTCOME comment block
+    let last_primary = '';  // Top-level keywords (those that drive margins)
+    let from_block = '';    // Keyword to track inline FROM blocks
+    let case_block = false; // Manage CASE block stack across keywords
+    let output = '';        // Final SQL to return to editor
 
     while (tokens.length) {
         const word = tokens.shift(); // Remove next item from the beginning of token array

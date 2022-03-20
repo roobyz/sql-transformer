@@ -68,6 +68,18 @@ class CustomArray extends Array {
         }
         return margin;
     }
+
+    /**
+     * Returns the current stack margin value.
+     * 
+     * @returns {Number}
+     */
+    peekMargin(index = -1) {
+        if (this.length > index * (-1) - 1) {
+            return this.slice(index)[0].margin;
+        }
+        return 0;
+    }
 }
 
 class CustomQueue extends Array {
@@ -253,7 +265,13 @@ function commentBlocks(sql) {
                     if (ttype.trim() === '') {
                         ttype = ''
                     } else {
-                        ttype = '/* ' + ttype + ' */\n'
+                        // Bracket the comment item in blocks
+                        // and ensure they are not double bracketted
+                        ttype = ('/* ' + ttype + ' */\n').replace(
+                            /(?<=\/\*)(.*)(\/\*)/, ''
+                        ).replace(
+                            /(?<=\*\/)(.*)(\*\/)/, ''
+                        )
                     }
 
                     return ttype
@@ -366,7 +384,7 @@ function tokenize(sql) {
     return tokens;
 }
 
-module.exports = function format(text, blockComments, startingWidth) {
+module.exports = function format(text, opt) {
     /**
      * @param {String} text 
      * @returns {String}
@@ -378,7 +396,7 @@ module.exports = function format(text, blockComments, startingWidth) {
      * - trim any leading whitespaces on each line
      * - remove any carriage returns or new lines
      * - remove any existing `Outcome` COMMENT blocks
-     * - ensure THEN/FROM/ON/OR/AND are treated as a keywords
+     * - ensure THEN|FROM|ON|OR|AND are treated as a keywords
      **/
     const sql = commentBlocks(text).replace(
         /(\r\n|\r|\n)/g, ' '
@@ -387,15 +405,7 @@ module.exports = function format(text, blockComments, startingWidth) {
     ).replace(
         /\/\* Outcome \*\//g, ''
     ).replace(
-        /THEN\(/g, 'THEN ('
-    ).replace(
-        /FROM\(/g, 'FROM ('
-    ).replace(
-        /ON\(/g, 'ON ('
-    ).replace(
-        /OR\(/g, 'OR ('
-    ).replace(
-        /AND\(/g, 'AND ('
+        /(THEN|FROM|ON|OR|AND)\(/g, '$1 ('
     );
 
     const tokens = tokenize(sql);
@@ -430,6 +440,7 @@ module.exports = function format(text, blockComments, startingWidth) {
     let case_block = false; // Manage CASE block stack across keywords
     let output = '';        // Final SQL to return to editor
 
+    // Format the query by tokens
     while (tokens.length) {
         const word = tokens.shift(); // Remove next item from the beginning of token array
 
@@ -506,6 +517,16 @@ module.exports = function format(text, blockComments, startingWidth) {
                     } else if ([','].includes(peekNextWord(tokens))) {
                         // pass
 
+                    } else if ([';'].includes(peekNextWord(tokens))) {
+                        // Close out any query ending after a comment
+                        while (stack.length) {
+                            stack.pop()
+                        }
+
+                        while ((formatted[formatted.length - 1] || '').trim() === '') {
+                            formatted.pop();
+                        }
+
                     } else {
                         setMargin(0, 0, 0);
 
@@ -545,7 +566,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                             }
                             stack.pop();
                         }
-                        setStack('SELECT', 4)
+                        setStack('SELECT', opt.startingWidth)
 
                     } else if (last_keyword === ',' && isNextKeyword(tokens, ['AS'])) {
                         while (stack.length) {
@@ -662,8 +683,8 @@ module.exports = function format(text, blockComments, startingWidth) {
             // Adjust the keyword margins and spacing
             switch (keyword) {
                 case 'SELECT':
-                    if (stack.getMargin() < startingWidth) {
-                        setStack('SELECT', startingWidth)
+                    if (stack.getMargin() < opt.startingWidth) {
+                        setStack('SELECT', opt.startingWidth)
                     } else {
                         setStack('SELECT', 0)
                     }
@@ -672,7 +693,9 @@ module.exports = function format(text, blockComments, startingWidth) {
                         if (last_word == '(') {
                             // pass
                         } else if (last_word === ')' && stack.peek(-1) === 'SELECT' || stack.peek(-2) === 'SELECT') {
+                            // Process the outcome query in a CTE set
                             if (last_comment !== 'OUTCOME') {
+                                // Clear the stack
                                 while (stack.length) {
                                     if (stack.peek() === 'WITH') {
                                         break;
@@ -680,9 +703,15 @@ module.exports = function format(text, blockComments, startingWidth) {
                                     stack.pop();
                                 }
 
+                                // Pop out of the current WITH block
                                 stack.pop()
-                                formatted.pushItems('\n', ' '.repeat(stack.getMargin()), '/* Outcome */');
-                                setStack('SELECT', 4)
+
+                                // Add an OUTCOME comment
+                                if (opt.outcomeComments) {
+                                    formatted.pushItems('\n', ' '.repeat(stack.getMargin()), '/* Outcome */');
+                                }
+
+                                setStack('SELECT', opt.startingWidth)
                                 setMargin(0, 0, 0)
 
                             } else {
@@ -707,7 +736,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                         stack.pop()
                     }
 
-                    setStack('CREATE', startingWidth)
+                    setStack('CREATE', opt.startingWidth)
 
                     break;
                 case 'WITH':
@@ -721,8 +750,8 @@ module.exports = function format(text, blockComments, startingWidth) {
                     if (['INTO', 'AS', 'TABLE', 'VIEW', '(', ')'].includes(last_keyword) && isNextKeyword(tokens, ['AS'])) {
                         setMargin(0, 0, 0);
 
-                    } else if ([';'].includes(last_keyword)) {
-                        formatted.push('')
+                    } else if ([';', ''].includes(last_keyword)) {
+                        // Pass
 
                     } else {
                         formatted.push(' ');
@@ -737,9 +766,9 @@ module.exports = function format(text, blockComments, startingWidth) {
                     }
 
                     if (stack.getMargin() === 0) {
-                        setMargin(0, 6, 6);
+                        setMargin(0, opt.startingWidth + 2, 6);
 
-                    } else if (stack.getMargin() === startingWidth && from_block === '(') {
+                    } else if (stack.getMargin() === opt.startingWidth && from_block === '(') {
                         if (stack.peek() === 'WITH') {
                             setStack('SELECT', 4)
                         } else {
@@ -758,7 +787,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                         stack.pop()
                     }
 
-                    setStack('INSERT', startingWidth)
+                    setStack('INSERT', opt.startingWidth)
 
                     break;
                 case 'INTO':
@@ -777,7 +806,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                 case 'LEFT':
                     // Check for left joins
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
-                        setMargin(0, 1, -3)
+                        setMargin(0, opt.startingWidth - 3, -3)
 
                     } else {
                         formatted.push(' ');
@@ -787,7 +816,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                 case 'RIGHT':
                     // Check for right function
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
-                        setMargin(0, 0, -4)
+                        setMargin(0, opt.startingWidth - 4, -4)
 
                     } else {
                         formatted.push(' ');
@@ -797,7 +826,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                 case 'CROSS':
                     // Check for right function
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
-                        setMargin(0, 0, -4)
+                        setMargin(0, opt.startingWidth - 4, -4)
 
                     } else {
                         formatted.push(' ');
@@ -836,7 +865,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                         formatted.push(' ');
 
                     } else {
-                        setMargin(2, 4, 0)
+                        setMargin(2, opt.startingWidth, 0)
                     }
 
                     break;
@@ -846,7 +875,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                     }
 
                     setStack('ON', 4)
-                    setMargin(startingWidth, 4, 0)
+                    setMargin(4, opt.startingWidth, 0)
 
                     break;
                 case 'WHERE':
@@ -854,13 +883,13 @@ module.exports = function format(text, blockComments, startingWidth) {
                         setMargin(0, 5, -1)
 
                     } else {
-                        setMargin(0, 5, 1)
+                        setMargin(0, opt.startingWidth + 1, 1)
                     }
 
                     break;
                 case 'OR':
                     if (stack.peek() === 'FUNCTION') {
-                        setMargin(startingWidth, 4, -4)
+                        setMargin(opt.startingWidth, 4, -4)
 
                     } else {
                         formatted.push(' ');
@@ -868,7 +897,16 @@ module.exports = function format(text, blockComments, startingWidth) {
 
                     break;
                 case 'LIMIT':
-                    setMargin(0, 5, 1)
+                    if (stack.peek() === 'INLINE') {
+                        setMargin(0, 0, 1)
+
+                    } else if (stack.getMargin() > 6) {
+                        setMargin(0, 0, stack.getMargin() + 6 - stack.peekMargin())
+
+                    } else {
+                        setMargin(0, opt.startingWidth + 1, 6 - stack.peekMargin())
+
+                    }
 
                     break;
                 case 'AND':
@@ -892,7 +930,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                         setMargin(0, 5, 1)
 
                     } else {
-                        setMargin(0, 7, 3);
+                        setMargin(0, opt.startingWidth + 3, 3);
                     }
 
                     break;
@@ -993,7 +1031,7 @@ module.exports = function format(text, blockComments, startingWidth) {
 
                     }
 
-                    setMargin(0, 2, -2)
+                    setMargin(0, opt.startingWidth - 2, -2)
 
                     break;
                 case 'ORDER BY':
@@ -1005,7 +1043,7 @@ module.exports = function format(text, blockComments, startingWidth) {
 
                     }
 
-                    setMargin(0, 2, -2)
+                    setMargin(0, opt.startingWidth - 2, -2)
 
                     break;
                 default:
@@ -1031,10 +1069,13 @@ module.exports = function format(text, blockComments, startingWidth) {
                     continue
                 }
             } else {
-                if (stack.getMargin() === 0) {
-                    formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(6)), ' AND');
-                } else {
-                    formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(2)), ' AND');
+                if (opt.whereOneOne) {
+                    if (stack.getMargin() === 0) {
+                        formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(6)), ' AND');
+                    } else {
+                        formatted.pushItems(' 1=1', '\n', ' '.repeat(stack.getMargin(2)), ' AND');
+                    }
+
                 }
             }
         }
@@ -1240,7 +1281,7 @@ module.exports = function format(text, blockComments, startingWidth) {
         } else if (stack.peek() === 'SELECT') {
             // column identifier
             if (keyword === ',') {
-                if (stack.getMargin() === 4 && last_keyword === 'SELECT' && from_block === '(') {
+                if (stack.getMargin() === opt.startingWidth && last_keyword === 'SELECT' && from_block === '(') {
                     setStack('SELECT', 8)
                 }
                 setMargin(0, 4, 4)
@@ -1366,7 +1407,7 @@ module.exports = function format(text, blockComments, startingWidth) {
     }
 
     // revert backticks to apostrophes in comment blocks
-    if (blockComments) {
+    if (opt.blockComments) {
         // Output comment blocks (/* */)
         output = formatted.join('').replace(/(?<=\/\*)(.*)(\w)(`)(\w)(.*)(?=\*\/)/g, "$1$2'$4$5");
 

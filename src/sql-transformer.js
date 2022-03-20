@@ -208,61 +208,69 @@ function commentBlocks(sql) {
      * @returns {String}
      */
 
-    // Capture each multi-line comment within a comment block
+    // Capture any multi-line comment within a comment block
     // and split them on their boundaries (brackets)
     var regex = /(?<=\/\*)([\s\S]*?)(?=\*\/)/gm;
     var cblocks = sql.split(regex);
+    var commented = '';
 
-    // Convert multi-line comment blocks into multiple line comment blocks
-    const nblock = cblocks.map(cItem => {
-        var ctype = '';
-        var ntype = '';
-        var ttype = '';
+    if (cblocks.length > 1) {
+        // Convert multi-line comment blocks into multiple line comment blocks
+        const nblock = cblocks.map(cItem => {
+            var ctype = '';
+            var ntype = '';
+            var ttype = '';
 
-        if (cItem.substr(0, 2) !== '*/' && cItem.slice(-2) === '/*') {
-            // Process non-comments with trailing bracket
-            if (cItem.slice(0, -2).trim() === '') {
-                ntype = ''
+            if (cItem.substr(0, 2) !== '*/' && cItem.slice(-2) === '/*') {
+                // Process non-comments with trailing bracket
+                if (cItem.slice(0, -2).trim() === '') {
+                    ntype = ''
+                } else {
+                    ntype = cItem.slice(0, -2).trim()
+                }
+
+            } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) === '/*') {
+                // Process non-comments with both brackets
+                ntype = cItem.substr(2).slice(0, -2)
+
+            } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) !== '/*') {
+                // Process non-comments with leading brackets
+                ntype = cItem.substr(2)
+
             } else {
-                ntype = cItem.slice(0, -2).trim()
+                // Process the comments:
+                // * Split multiple comment lines into an array
+                // * Convert each item into comment blocks
+                ctype = cItem.split(/(\r\n|\r|\n)/g).map(tItem => {
+                    if (tItem === '') {
+                        ttype = ''
+                    } else {
+                        ttype = tItem.replace(/(\r|\n)/g, ' ')
+
+                    }
+
+                    // Remove any empty lines
+                    if (ttype.trim() === '') {
+                        ttype = ''
+                    } else {
+                        ttype = '/* ' + ttype + ' */\n'
+                    }
+
+                    return ttype
+                });
+
+                // Return multiple line comments
+                ntype = ctype.join('')
             }
 
-        } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) === '/*') {
-            // Process non-comments with both brackets
-            ntype = cItem.substr(2).slice(0, -2)
+            return ntype
+        })
 
-        } else if (cItem.substr(0, 2) === '*/' && cItem.slice(-2) !== '/*') {
-            // Process non-comments with leading brackets
-            ntype = cItem.substr(2)
-
-        } else {
-            // Process the comments:
-            // * Split multiple comment lines into an array
-            // * Convert each item into comment blocks
-            ctype = cItem.split(/(\r\n|\r|\n)/g).map(tItem => {
-                if (tItem === '') {
-                    ttype = ''
-                } else {
-                    ttype = tItem.replace(/(\r|\n)/g, ' ')
-
-                }
-
-                // Remove any empty lines
-                if (ttype.trim() === '') {
-                    ttype = ''
-                } else {
-                    ttype = '/* ' + ttype + ' */\n'
-                }
-
-                return ttype
-            });
-
-            // Return multiple line comments
-            ntype = ctype.join('')
-        }
-
-        return ntype
-    })
+        commented = nblock.join('');
+    } else {
+        // Process only line comment blocks
+        commented = sql;
+    }
 
     /**
      * Returns:
@@ -271,7 +279,7 @@ function commentBlocks(sql) {
      * - all dash or slash comment (-- or //) converted to comment blocks
      * - swap apostrophes within COMMENT BLOCKS into backticks
      **/
-    return nblock.join('').replace(
+    return commented.replace(
         /^\s*/gm, ''
     ).replace(
         /([^{#])(.*)([/][*])(.*)([*][/])(.*)([#][}])/g, '$4$6$7'
@@ -358,7 +366,7 @@ function tokenize(sql) {
     return tokens;
 }
 
-module.exports = function format(text) {
+module.exports = function format(text, blockComments, startingWidth) {
     /**
      * @param {String} text 
      * @returns {String}
@@ -370,7 +378,7 @@ module.exports = function format(text) {
      * - trim any leading whitespaces on each line
      * - remove any carriage returns or new lines
      * - remove any existing `Outcome` COMMENT blocks
-     * - ensure THEN/ON/OR/AND are treated as a keywords
+     * - ensure THEN/FROM/ON/OR/AND are treated as a keywords
      **/
     const sql = commentBlocks(text).replace(
         /(\r\n|\r|\n)/g, ' '
@@ -380,6 +388,8 @@ module.exports = function format(text) {
         /\/\* Outcome \*\//g, ''
     ).replace(
         /THEN\(/g, 'THEN ('
+    ).replace(
+        /FROM\(/g, 'FROM ('
     ).replace(
         /ON\(/g, 'ON ('
     ).replace(
@@ -652,8 +662,8 @@ module.exports = function format(text) {
             // Adjust the keyword margins and spacing
             switch (keyword) {
                 case 'SELECT':
-                    if (stack.getMargin() < 4) {
-                        setStack('SELECT', 4)
+                    if (stack.getMargin() < startingWidth) {
+                        setStack('SELECT', startingWidth)
                     } else {
                         setStack('SELECT', 0)
                     }
@@ -697,7 +707,7 @@ module.exports = function format(text) {
                         stack.pop()
                     }
 
-                    setStack('CREATE', 4)
+                    setStack('CREATE', startingWidth)
 
                     break;
                 case 'WITH':
@@ -729,7 +739,7 @@ module.exports = function format(text) {
                     if (stack.getMargin() === 0) {
                         setMargin(0, 6, 6);
 
-                    } else if (stack.getMargin() === 4 && from_block === '(') {
+                    } else if (stack.getMargin() === startingWidth && from_block === '(') {
                         if (stack.peek() === 'WITH') {
                             setStack('SELECT', 4)
                         } else {
@@ -748,7 +758,7 @@ module.exports = function format(text) {
                         stack.pop()
                     }
 
-                    setStack('INSERT', 4)
+                    setStack('INSERT', startingWidth)
 
                     break;
                 case 'INTO':
@@ -1356,7 +1366,11 @@ module.exports = function format(text) {
     }
 
     // revert backticks to apostrophes in comment blocks
-    if (false) {
+    if (blockComments) {
+        // Output comment blocks (/* */)
+        output = formatted.join('').replace(/(?<=\/\*)(.*)(\w)(`)(\w)(.*)(?=\*\/)/g, "$1$2'$4$5");
+
+    } else {
         // Output dash comments ('--')
         output = formatted.join(''
         ).replace(
@@ -1364,10 +1378,6 @@ module.exports = function format(text) {
         ).replace(
             /(.*)([/][*])(.*)([ ][*][/])/g, "$1-- $3"
         );
-
-    } else {
-        // Output comment blocks (/* */)
-        output = formatted.join('').replace(/(?<=\/\*)(.*)(\w)(`)(\w)(.*)(?=\*\/)/g, "$1$2'$4$5");
 
     }
     // formatted.pushItems('-->', 'chk0', '<--');

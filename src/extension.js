@@ -3,6 +3,8 @@
 const vscode = require('vscode');
 const format = require('./sql-transformer.js');
 
+const configPrefix = 'sqlTransformer';
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 
@@ -23,17 +25,19 @@ function activate(context) {
 
 		// The code you place here will be executed every time your command is executed
 		const editor = vscode.window.activeTextEditor;
+		const options = vscode.workspace.getConfiguration(configPrefix);
 
 		if (editor) {
 			const document = editor.document;
 			const selection = editor.selection;
 
-			// Get the word within the selection
+			// selected text
 			const word = document.getText(selection);
-			const formatted = format(word);
+			const formatted = format(word, options.blockComments, options.startingWidth);
 			editor.edit(editBuilder => {
 				editBuilder.replace(selection, formatted);
 			});
+
 		}
 	});
 
@@ -41,7 +45,7 @@ function activate(context) {
 }
 
 // this method is called when your extension is deactivated
-function deactivate() {}
+function deactivate() { }
 
 // eslint-disable-next-line no-undef
 module.exports = {

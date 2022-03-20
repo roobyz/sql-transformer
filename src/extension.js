@@ -33,7 +33,7 @@ function activate(context) {
 
 			// selected text
 			const word = document.getText(selection);
-			const formatted = format(word, options.blockComments, options.startingWidth);
+			const formatted = format(word, options);
 			editor.edit(editBuilder => {
 				editBuilder.replace(selection, formatted);
 			});

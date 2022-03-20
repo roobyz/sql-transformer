@@ -846,7 +846,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                     }
 
                     setStack('ON', 4)
-                    setMargin(4, 4, 0)
+                    setMargin(startingWidth, 4, 0)
 
                     break;
                 case 'WHERE':
@@ -860,7 +860,7 @@ module.exports = function format(text, blockComments, startingWidth) {
                     break;
                 case 'OR':
                     if (stack.peek() === 'FUNCTION') {
-                        setMargin(4, 4, -4)
+                        setMargin(startingWidth, 4, -4)
 
                     } else {
                         formatted.push(' ');

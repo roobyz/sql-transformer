@@ -13,6 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [0.3.2] - 2022-03-18
+This release is ready for broad use on most SQL. With a focus on reproducible outcomes, executing the transformer should now result in identical output for multiple runs of the same SQL Code. This has been tested with SQL that ranges from tens of lines to thousands of lines of SQL containing complex CTE and inline logic. Feedback welcomed!
+
+### Added
+- Process multi-line comments into multiple single-line comments
+- Correctly handle dash or slash comments within block comments
+- Add VSCode default settings to configure output
+  - blockComments: boolean for specifying block or line comments
+  - startingWidth: integer for specifying starting select margin
+
+### Changed
+- Modified formatter parameters with new settings variables
+- Updated output to consider blockComments for comment style
+- Added preliminary startingWidth to formatter
+
 ## [0.3.1] - 2022-03-18
 ### Changed
 - Adjust ELSE/END margins in CASE blocks

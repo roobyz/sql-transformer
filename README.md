@@ -24,14 +24,21 @@ There are two user settings for configuring SQL Transformer output:
 
 ![User Settings](./src/user_settings.png)
 
-  - **blockComments**: *boolean* for specifying block or line comments
+  - **Block Comments**: *boolean* for specifying block or dash comments
     - This is currently defaulted to block margins
-    - Option to output with line comments will eventually become the default, however it hasn't been tested as heavily yet. This aligns with VSCode default SQL comment style.
-    - See examples of both output types below
-  - **startingWidth**: *integer* for specifying starting select margin
-    - Current default margin is set to 4
-    - Goal is to make this an adjustable preference, however this is still a work in progress
+    - Targeting dash comments for the default, however it hasn't been tested as heavily yet.
+    - See style example(s) below
 
+  - **Outcome Comments**: *boolean* to include/exclude OUTCOME comments on CTE queries
+    - This is currently defaulted to include OUTCOME comments
+    - See style example(s) below
+
+  - **Starting Width**: *integer* for specifying starting select margin
+    - Current default margin is set to 5
+    - Setting to 5 or greater allows for aligning the query on the first attribute, while capitalizing on VSCode's margin collapse functionality
+
+  - **Where One One**: *boolean* to include/exclude 'WHERE 1=1' filters
+    - Current default is to include
 
 ## SQL style example
 

@@ -14,7 +14,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
-## [0.3.2] - 2022-03-18
+## [0.3.3] - 2022-03-20
+### Added
+- setting to include/exclude OUTCOME comments on CTE queries
+- setting to include/exclude WHERE 1=1 filters
+- new function peekMargin to return the current stack margin value.
+
+### Changed
+- account for badly formed block comments
+- simplify regex
+- refactor format function parameters
+- refactor setStack and setMargin calls to account for user-setting (startingWidth)
+- adjust default startingWidth to 5
+
+### Fixed
+- close out query blocks that end immediately after a comment
+
+## [0.3.2] - 2022-03-19
 This release is ready for broad use on most SQL. With a focus on reproducible outcomes, executing the transformer should now result in identical output for multiple runs of the same SQL Code. This has been tested with SQL that ranges from tens of lines to thousands of lines of SQL containing complex CTE and inline logic. Feedback welcomed!
 
 ### Added

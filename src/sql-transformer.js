@@ -405,7 +405,7 @@ module.exports = function format(text, opt) {
     ).replace(
         /\/\* Outcome \*\//g, ''
     ).replace(
-        /(THEN|FROM|ON|OR|AND)\(/g, '$1 ('
+        /(AND|FROM|IN|ON|OR|THEN)\(/g, '$1 ('
     );
 
     const tokens = tokenize(sql);
@@ -579,14 +579,6 @@ module.exports = function format(text, opt) {
                         setMargin(0, 0, 0);
 
                     } else if (isNextKeyword(tokens, ['GROUP BY', 'ORDER BY'])) {
-                        formatted.pushItems(' '.repeat(stack.getMargin(-2)));
-                        if (stack.getMargin() === 0) {
-                            setStack('BY', 4)
-
-                        } else {
-                            setStack('BY', 0)
-
-                        }
 
                     } else if (isNextKeyword(tokens, ['('])) {
                         while ((formatted[formatted.length - 1] || '').trim() === '') {
@@ -777,6 +769,10 @@ module.exports = function format(text, opt) {
 
                         setMargin(0, 2, 2);
 
+                    } else if (stack.peek() === 'WITH') {
+                        setStack('SELECT', 4)
+                        setMargin(0, 3, 3);
+
                     } else {
                         setMargin(0, 2, 2);
                     }
@@ -803,10 +799,27 @@ module.exports = function format(text, opt) {
                     formatted.push('\n');
 
                     break;
+                case 'FULL':
+                    if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
+                        if (stack.peek() === 'INLINE') {
+                            setMargin(0, opt.startingWidth - 3, -3)
+                        } else {
+                            setMargin(0, opt.startingWidth - 3, -2)
+                        }
+
+                    } else {
+                        formatted.push(' ');
+                    }
+
+                    break;
                 case 'LEFT':
                     // Check for left joins
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
-                        setMargin(0, opt.startingWidth - 3, -3)
+                        if (stack.peek() === 'INLINE') {
+                            setMargin(0, opt.startingWidth - 3, -3)
+                        } else {
+                            setMargin(0, opt.startingWidth - 3, -2)
+                        }
 
                     } else {
                         formatted.push(' ');
@@ -816,7 +829,11 @@ module.exports = function format(text, opt) {
                 case 'RIGHT':
                     // Check for right function
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
-                        setMargin(0, opt.startingWidth - 4, -4)
+                        if (stack.peek() === 'INLINE') {
+                            setMargin(0, opt.startingWidth - 4, -4)
+                        } else {
+                            setMargin(0, opt.startingWidth - 4, -3)
+                        }
 
                     } else {
                         formatted.push(' ');
@@ -826,15 +843,15 @@ module.exports = function format(text, opt) {
                 case 'CROSS':
                     // Check for right function
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
-                        setMargin(0, opt.startingWidth - 4, -4)
+                        if (stack.peek() === 'INLINE') {
+                            setMargin(0, opt.startingWidth - 4, -4)
+                        } else {
+                            setMargin(0, opt.startingWidth - 4, -3)
+                        }
 
                     } else {
                         formatted.push(' ');
                     }
-
-                    break;
-                case 'FULL':
-                    setMargin(0, 1, -3)
 
                     break;
                 case 'INNER':
@@ -874,8 +891,13 @@ module.exports = function format(text, opt) {
                         stack.pop();
                     }
 
-                    setStack('ON', 4)
-                    setMargin(4, opt.startingWidth, 0)
+                    if (stack.peek() === 'INLINE') {
+                        setStack('ON', 4)
+                        setMargin(4, opt.startingWidth, 0)
+                    } else {
+                        setStack('ON', 4)
+                        setMargin(4, opt.startingWidth, 1)
+                    }
 
                     break;
                 case 'WHERE':
@@ -1023,27 +1045,93 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'GROUP BY':
-                    if (stack.peek(-1) === 'ON') {
-                        setStack('BY', -4)
-
-                    } else {
-                        setStack('BY', 0)
-
+                    while ((formatted[formatted.length - 1] || '').trim() === '') {
+                        formatted.pop();
                     }
 
-                    setMargin(0, opt.startingWidth - 2, -2)
+                    if (stack.peek(-1) === 'ON') {
+                        if (stack.getMargin() === 4) {
+                            setStack('BY', 1)
+
+                        } else if (stack.peek(-2) === 'INLINE' && stack.peek(-3) === 'WITH') {
+                            setStack('BY', -4)
+
+                        } else if ([stack.peek(-2), stack.peek(-3)].includes('WITH')) {
+                            setStack('BY', -3)
+
+                        } else {
+                            setStack('BY', -4)
+
+                        }
+
+                    } else {
+                        if (stack.peek() === 'BY') {
+
+                        } else if (stack.peek() === 'JOIN') {
+                            setStack('BY', opt.startingWidth - 6)
+
+                        } else if (['FUNCTION', 'SELECT', 'INLINE', 'ON'].includes(stack.peek())) {
+                            setStack('BY', opt.startingWidth - 5)
+
+                        } else if (stack.getMargin() === 0) {
+                            setStack('BY', opt.startingWidth - 1)
+
+                        } else {
+                            setStack('BY', opt.startingWidth - 6)
+
+                        }
+                    }
+
+                    if (['INLINE', 'SELECT', 'ON', 'FUNCTION'].includes(stack.peek(-2))) {
+                        setMargin(0, opt.startingWidth - 2, -2)
+                    } else {
+                        setMargin(0, opt.startingWidth - 3, -1)
+                    }
 
                     break;
                 case 'ORDER BY':
-                    if (stack.peek(-1) === 'ON') {
-                        setStack('BY', -4)
-
-                    } else {
-                        setStack('BY', 0)
-
+                    while ((formatted[formatted.length - 1] || '').trim() === '') {
+                        formatted.pop();
                     }
 
-                    setMargin(0, opt.startingWidth - 2, -2)
+                    if (stack.peek(-1) === 'ON') {
+                        if (stack.getMargin() === 4) {
+                            setStack('BY', 1)
+
+                        } else if (stack.peek(-2) === 'INLINE' && stack.peek(-3) === 'WITH') {
+                            setStack('BY', -4)
+
+                        } else if ([stack.peek(-2), stack.peek(-3)].includes('WITH')) {
+                            setStack('BY', -3)
+
+                        } else {
+                            setStack('BY', -4)
+
+                        }
+
+                    } else {
+                        if (stack.peek() === 'BY') {
+
+                        } else if (stack.peek() === 'JOIN') {
+                            setStack('BY', opt.startingWidth - 6)
+
+                        } else if (['FUNCTION', 'SELECT', 'INLINE', 'ON'].includes(stack.peek())) {
+                            setStack('BY', opt.startingWidth - 5)
+
+                        } else if (stack.getMargin() === 0) {
+                            setStack('BY', opt.startingWidth - 1)
+
+                        } else {
+                            setStack('BY', opt.startingWidth - 6)
+
+                        }
+                    }
+
+                    if (['INLINE', 'SELECT', 'ON', 'FUNCTION'].includes(stack.peek(-2))) {
+                        setMargin(0, opt.startingWidth - 2, -2)
+                    } else {
+                        setMargin(0, opt.startingWidth - 3, -1)
+                    }
 
                     break;
                 default:
@@ -1219,6 +1307,7 @@ module.exports = function format(text, opt) {
             }
             if (pwords.includes(word) && last_word === 'FROM') {
                 from_block = word
+                // formatted.pushItems('-->', from_block, '<--');
             }
 
             last_word = word.toUpperCase();
@@ -1278,6 +1367,15 @@ module.exports = function format(text, opt) {
             }
             setMargin(0, 5, 5)
 
+        } else if (last_keyword === ')' && keyword === ',' && stack.peek() === 'BY') {
+            while ((formatted[formatted.length - 1] || '').trim() === '') {
+                formatted.pop();
+            }
+            if (stack.getMargin() === 0) {
+                setStack('BY', 4)
+            }
+            setMargin(4, opt.startingWidth + 1, 5)
+
         } else if (stack.peek() === 'SELECT') {
             // column identifier
             if (keyword === ',') {
@@ -1306,6 +1404,9 @@ module.exports = function format(text, opt) {
             if (word.includes('::')) {
                 //
             } else if (word.includes(',') && last_keyword === 'END') {
+
+
+
                 setMargin(0, 0, 5)
 
             } else {
@@ -1334,12 +1435,10 @@ module.exports = function format(text, opt) {
                 if (generateArrayOfNumbers(100).includes(peekNextWord(tokens))) {
                     // pass
                 } else {
-                    // Check whether a margin was created by a COMMENT block
-                    if ((formatted[formatted.length - 1] || '').trim() === '') {
-                        // pass
-                    } else {
-                        setMargin(0, 9, 5)
+                    while ((formatted[formatted.length - 1] || '').trim() === '') {
+                        formatted.pop();
                     }
+                    setMargin(4, opt.startingWidth + 1, 5)
                 }
 
             } else {
@@ -1424,6 +1523,7 @@ module.exports = function format(text, opt) {
     // formatted.pushItems('-->', 'chk0', '<--');
     // formatted.pushItems('-->', stack.peek(), '<--');
     // formatted.pushItems('-->', stack.getMargin(), '<--');
+    // formatted.pushItems('-->', stack.peek(-2), '-*-', stack.getMargin(), '-*-', last_primary, '<--');
 
     return output;
 

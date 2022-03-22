@@ -434,6 +434,13 @@ module.exports = function format(text, opt) {
         }
     }
 
+    function trimLines() {
+        // Remove any extraneous lines
+        while ((formatted[formatted.length - 1] || '').trim() === '') {
+            formatted.pop();
+        }
+    }
+
     let keyword = '';       // Any keyword
     let last_word = '';     // Any word (including keywords)
     let last_keyword = '';  // Prior keyword
@@ -469,11 +476,7 @@ module.exports = function format(text, opt) {
                     formatted.pushItems(word);
 
                 } else {
-                    // Remove any extraneous lines
-                    while ((formatted[formatted.length - 1] || '-').trim() === '') {
-                        formatted.pop()
-                    }
-
+                    trimLines()
                     switch (stack.peek(-2)) {
                         case 'ON':
                             formatted.pushItems('\n', ' '.repeat(stack.getMargin(3)), word);
@@ -523,9 +526,7 @@ module.exports = function format(text, opt) {
                         stack.pop()
                     }
                 } else if (isNextKeyword(tokens, ['JOIN'], 1)) {
-                    while ((formatted[formatted.length - 1] || '').trim() === '') {
-                        formatted.pop();
-                    }
+                    trimLines()
 
                     if (!isNextKeyword(tokens, ['SELECT', '('], 1)) {
                         if (stack.peek() === 'ON') {
@@ -565,15 +566,10 @@ module.exports = function format(text, opt) {
                             stack.pop();
                         }
 
-                        setMargin(opt.startingWidth, -1, 0);
-
                     } else if (isNextKeyword(tokens, ['GROUP BY', 'ORDER BY'])) {
 
                     } else if (isNextKeyword(tokens, ['('])) {
-                        while ((formatted[formatted.length - 1] || '').trim() === '') {
-                            formatted.pop();
-                        }
-
+                        trimLines()
                         setMargin(0, 6, 6)
 
                     } else {
@@ -663,7 +659,7 @@ module.exports = function format(text, opt) {
         }
 
         // ###################################################################################
-        //  Process keywords.
+        //  Process margins.
         // ###################################################################################
         if (kwords.includes(keyword)) {
             last_primary = keyword
@@ -706,9 +702,7 @@ module.exports = function format(text, opt) {
                             }
 
                         } else {
-                            while ((formatted[formatted.length - 1] || '').trim() === '') {
-                                formatted.pop();
-                            }
+                            trimLines()
                             setMargin(0, 0, 0)
 
                         }
@@ -1005,9 +999,7 @@ module.exports = function format(text, opt) {
                     break;
                 case 'GROUP BY':
                 case 'ORDER BY':
-                    while ((formatted[formatted.length - 1] || '').trim() === '') {
-                        formatted.pop();
-                    }
+                    trimLines()
 
                     if (stack.peek(-1) === 'ON') {
                         if (stack.getMargin() === 4) {
@@ -1085,6 +1077,11 @@ module.exports = function format(text, opt) {
 
         if (['OVER'].includes(last_word)) {
             formatted.push(' ');
+        }
+
+        // Remove superfloud lines
+        if (last_keyword === 'WITH' && isNextKeyword(tokens, ['AS'])) {
+            trimLines()
         }
 
         // ###################################################################################
@@ -1250,6 +1247,7 @@ module.exports = function format(text, opt) {
 
             if (last_keyword === ',') {
                 if (isNextKeyword(tokens, ['AS'])) {
+                    // Ensure there is a newline ater a comma before new CTE
                     setMargin(0, 0, 0)
 
                 } else {
@@ -1271,8 +1269,6 @@ module.exports = function format(text, opt) {
             }
 
             formatted.push(',');
-            setMargin(0, 0, 0)
-
             if (isReservedWord(word) && !['/*', '*/', '{{', '}}', '{%', '%}'].includes(word)) {
                 last_keyword = keyword;
             }
@@ -1292,9 +1288,8 @@ module.exports = function format(text, opt) {
             setMargin(0, 5, 5)
 
         } else if (last_keyword === ')' && keyword === ',' && stack.peek() === 'BY') {
-            while ((formatted[formatted.length - 1] || '').trim() === '') {
-                formatted.pop();
-            }
+            trimLines()
+
             if (stack.getMargin() === 0) {
                 setStack('BY', 4)
             }
@@ -1328,9 +1323,6 @@ module.exports = function format(text, opt) {
             if (word.includes('::')) {
                 //
             } else if (word.includes(',') && last_keyword === 'END') {
-
-
-
                 setMargin(0, 0, 5)
 
             } else {
@@ -1359,9 +1351,7 @@ module.exports = function format(text, opt) {
                 if (generateArrayOfNumbers(100).includes(peekNextWord(tokens))) {
                     // pass
                 } else {
-                    while ((formatted[formatted.length - 1] || '').trim() === '') {
-                        formatted.pop();
-                    }
+                    trimLines()
                     setMargin(4, opt.startingWidth + 1, 5)
                 }
 
@@ -1413,9 +1403,7 @@ module.exports = function format(text, opt) {
             }
             from_block = '';
 
-            while ((formatted[formatted.length - 1] || '').trim() === '') {
-                formatted.pop();
-            }
+            trimLines()
 
             formatted.push('\n;\n\n');
             last_word = ';';
@@ -1424,9 +1412,7 @@ module.exports = function format(text, opt) {
         } else {
             formatted.push(word);
             last_word = word.toUpperCase();
-
         }
-
     }
 
     // revert backticks to apostrophes in comment blocks
@@ -1445,10 +1431,6 @@ module.exports = function format(text, opt) {
 
     }
     // formatted.pushItems('-->', 'chk0', '<--');
-    // formatted.pushItems('-->', stack.peek(), '<--');
-    // formatted.pushItems('-->', stack.getMargin(), '<--');
     // formatted.pushItems('-->', stack.peek(-2), '-*-', stack.getMargin(), '-*-', last_primary, '<--');
-
     return output;
-
 }

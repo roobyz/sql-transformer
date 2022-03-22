@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.3.4] - 2022-03-21
+### Changed
+- additional margin adjustments due to startingWidth
+- stack cleanup
+- regex tweak
+- additional comments
+
 ## [0.3.3] - 2022-03-20
 ### Added
 - setting to include/exclude OUTCOME comments on CTE queries

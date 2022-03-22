@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.3.5] - 2022-03-22
+### Changed
+- simplify COMMENT margin code for clarity
+- adjust COMMENT margins for WITH blocks
+- cleanup switch-case logic
+- cleanup spacing with new trimLines function
+
 ## [0.3.4] - 2022-03-21
 ### Changed
 - additional margin adjustments due to startingWidth

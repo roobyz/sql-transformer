@@ -20,7 +20,7 @@ This release is ready for broad use on most SQL, and has been tested with SQL th
 
 ## Configuration
 
-There are two user settings for configuring SQL Transformer output:
+There are four user settings for configuring SQL Transformer output:
 
 ![User Settings](./src/user_settings.png)
 

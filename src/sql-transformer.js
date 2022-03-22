@@ -395,17 +395,20 @@ module.exports = function format(text, opt) {
      * - Process COMMENT blocks
      * - trim any leading whitespaces on each line
      * - remove any carriage returns or new lines
+     * - ensure that ')' are treated as keywords
      * - remove any existing `Outcome` COMMENT blocks
-     * - ensure THEN|FROM|ON|OR|AND are treated as a keywords
+     * - ensure THEN|FROM|ON|OR|AND are treated as keywords
      **/
     const sql = commentBlocks(text).replace(
         /(\r\n|\r|\n)/g, ' '
     ).replace(
         /\s+/g, ' '
     ).replace(
+        /(\))(\w)/g, '$1 $2'
+    ).replace(
         /\/\* Outcome \*\//g, ''
     ).replace(
-        /(AND|FROM|IN|ON|OR|THEN)\(/g, '$1 ('
+        /(AND|AS|FROM|IN|ON|OR|THEN)\(/g, '$1 ('
     );
 
     const tokens = tokenize(sql);
@@ -451,7 +454,9 @@ module.exports = function format(text, opt) {
             keyword = '';
         }
 
+        // ###################################################################################
         // Process comment blocks.
+        // ###################################################################################
         if (cwords.includes(keyword) || stack.peek() === 'COMMENT') {
             if (['/*', '{#'].includes(keyword)) {
                 if (isNextKeyword(tokens, ['OUTCOME'])) {
@@ -496,44 +501,30 @@ module.exports = function format(text, opt) {
                 // Close the comment
                 formatted.pushItems(' ', word);
 
-                if (isNextKeyword(tokens, [')'])) {
-                    setMargin(0, 0, 0);
-                }
-
-                if ((formatted[formatted.length - 1] || '') === '*/') {
-                    if (last_keyword === 'WHERE') {
-                        setMargin(0, 6, 6);
-
-                    } else if (['INSERT', 'CREATE'].includes(peekNextWord(tokens))) {
-                        setMargin(0, 0, 0);
-
-                    } else if (last_keyword === 'FROM') {
-                        // pass
-                        setMargin(0, 0, 6);
-
-                    } else if (kwords.includes(peekNextWord(tokens))) {
-                        // pass
-
-                    } else if ([','].includes(peekNextWord(tokens))) {
-                        // pass
-
-                    } else if ([';'].includes(peekNextWord(tokens))) {
-                        // Close out any query ending after a comment
-                        while (stack.length) {
-                            stack.pop()
-                        }
-
-                        while ((formatted[formatted.length - 1] || '').trim() === '') {
-                            formatted.pop();
-                        }
-
-                    } else {
-                        setMargin(0, 0, 0);
-
+                if (isNextKeyword(tokens, ['WHERE'])) {
+                    if (stack.peek() === 'ON') {
+                        stack.pop();
                     }
                 }
 
-                if (isNextKeyword(tokens, ['JOIN'], 1)) {
+                if (last_keyword === 'FROM') {
+                    setMargin(0, opt.startingWidth, 6);
+
+                } else if (last_keyword === 'WHERE') {
+                    if (stack.peek() == 'JOIN') {
+                        setMargin(0, opt.startingWidth - 2, 4);
+
+                    } else {
+                        setMargin(0, opt.startingWidth, 6);
+
+                    }
+
+                } else if ([';'].includes(peekNextWord(tokens))) {
+                    // Close out any query ending after a comment
+                    while (stack.length) {
+                        stack.pop()
+                    }
+                } else if (isNextKeyword(tokens, ['JOIN'], 1)) {
                     while ((formatted[formatted.length - 1] || '').trim() === '') {
                         formatted.pop();
                     }
@@ -576,7 +567,7 @@ module.exports = function format(text, opt) {
                             stack.pop();
                         }
 
-                        setMargin(0, 0, 0);
+                        setMargin(opt.startingWidth, -1, 0);
 
                     } else if (isNextKeyword(tokens, ['GROUP BY', 'ORDER BY'])) {
 
@@ -605,6 +596,9 @@ module.exports = function format(text, opt) {
                         default:
                         // pass
                     }
+                } else {
+                    setMargin(0, 0, 0);
+
                 }
 
             } else {
@@ -616,7 +610,9 @@ module.exports = function format(text, opt) {
             continue;
         }
 
+        // ###################################################################################
         // Process jinja blocks
+        // ###################################################################################
         if (dwords.includes(keyword) || stack.peek() === 'JINJA') {
             if (['{%'].includes(keyword)) {
                 // Start JINJA block
@@ -669,7 +665,9 @@ module.exports = function format(text, opt) {
             continue;
         }
 
+        // ###################################################################################
         //  Process keywords.
+        // ###################################################################################
         if (kwords.includes(keyword)) {
             last_primary = keyword
             // Adjust the keyword margins and spacing
@@ -749,11 +747,14 @@ module.exports = function format(text, opt) {
                         formatted.push(' ');
                     }
 
-                    setStack('WITH', 4)
+                    setStack('WITH', opt.startingWidth)
 
                     break;
                 case 'FROM':
                     if (stack.peek() !== 'WITH') {
+                        stack.pop();
+                    }
+                    if (stack.peek() === 'FUNCTION') {
                         stack.pop();
                     }
 
@@ -871,12 +872,7 @@ module.exports = function format(text, opt) {
                         stack.pop();
                     }
 
-                    if (last_word === 'CROSS') {
-                        setStack('JOIN', 0)
-
-                    } else {
-                        setStack('JOIN', 2)
-                    }
+                    setStack('JOIN', 2)
 
                     if (['LEFT', 'RIGHT', 'FULL', 'CROSS'].includes(last_word)) {
                         formatted.push(' ');
@@ -902,7 +898,7 @@ module.exports = function format(text, opt) {
                     break;
                 case 'WHERE':
                     if (stack.peek() === 'JOIN') {
-                        setMargin(0, 5, -1)
+                        setMargin(0, opt.startingWidth, -1)
 
                     } else {
                         setMargin(0, opt.startingWidth + 1, 1)
@@ -1172,7 +1168,9 @@ module.exports = function format(text, opt) {
             formatted.push(' ');
         }
 
+        // ###################################################################################
         //  Process stack blocks and store last words
+        // ###################################################################################
         if (['(', ')'].includes(keyword) && stack.peek() !== 'JINJA') {
             switch (keyword) {
                 // Open new block
@@ -1307,14 +1305,15 @@ module.exports = function format(text, opt) {
             }
             if (pwords.includes(word) && last_word === 'FROM') {
                 from_block = word
-                // formatted.pushItems('-->', from_block, '<--');
             }
 
             last_word = word.toUpperCase();
             continue;
         }
 
+        // ###################################################################################
         //  Process identifiers, expressions, .. etc.
+        // ###################################################################################
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 
@@ -1331,7 +1330,13 @@ module.exports = function format(text, opt) {
             }
 
             if (last_keyword === ',') {
-                formatted.push(' ');
+                if (isNextKeyword(tokens, ['AS'])) {
+                    setMargin(0, 0, 0)
+
+                } else {
+                    formatted.push(' ');
+
+                }
             }
 
         } else if (last_keyword === '(' && stack.peek() === 'INLINE' && last_primary !== 'INTO') {

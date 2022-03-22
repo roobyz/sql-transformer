@@ -463,35 +463,33 @@ module.exports = function format(text, opt) {
                     last_comment = 'OUTCOME'
                 }
 
-                // Start comment block
-                if (stack.getMargin() === 0) {
-                    setStack('COMMENT', 4)
-
-                } else {
-                    setStack('COMMENT', 0)
-
-                }
+                setStack('COMMENT', 0)
 
                 if (last_word === ';' || last_word === '') {
                     formatted.pushItems(word);
 
                 } else {
+                    // Remove any extraneous lines
                     while ((formatted[formatted.length - 1] || '-').trim() === '') {
                         formatted.pop()
                     }
 
-                    if (stack.peek(-2) === 'ON') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(3)), word);
+                    switch (stack.peek(-2)) {
+                        case 'ON':
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(3)), word);
 
-                    } else if (stack.peek(-2) !== 'FUNCTION') {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
+                            break;
+                        case 'CREATE':
+                        case 'FUNCTION':
+                        case 'INTO':
+                        case 'WITH':
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)), word);
 
-                    } else {
-                        formatted.pushItems('\n', ' '.repeat(stack.getMargin(0)), word);
+                            break;
+                        default:
+                            formatted.pushItems('\n', ' '.repeat(stack.getMargin(7)), word);
                     }
-
                 }
-
             } else if (['*/', '#}'].includes(keyword)) {
                 // End comment block
                 if (stack.peek() !== 'WITH') {
@@ -604,7 +602,6 @@ module.exports = function format(text, opt) {
             } else {
                 // In-comment
                 formatted.pushItems(' ', word);
-
             }
 
             continue;
@@ -788,9 +785,6 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'INTO':
-                    formatted.push(' ');
-
-                    break;
                 case 'OVERWRITE':
                     formatted.push(' ');
 
@@ -801,18 +795,6 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'FULL':
-                    if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
-                        if (stack.peek() === 'INLINE') {
-                            setMargin(0, opt.startingWidth - 3, -3)
-                        } else {
-                            setMargin(0, opt.startingWidth - 3, -2)
-                        }
-
-                    } else {
-                        formatted.push(' ');
-                    }
-
-                    break;
                 case 'LEFT':
                     // Check for left joins
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
@@ -828,21 +810,7 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'RIGHT':
-                    // Check for right function
-                    if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
-                        if (stack.peek() === 'INLINE') {
-                            setMargin(0, opt.startingWidth - 4, -4)
-                        } else {
-                            setMargin(0, opt.startingWidth - 4, -3)
-                        }
-
-                    } else {
-                        formatted.push(' ');
-                    }
-
-                    break;
                 case 'CROSS':
-                    // Check for right function
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
                         if (stack.peek() === 'INLINE') {
                             setMargin(0, opt.startingWidth - 4, -4)
@@ -856,11 +824,6 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'INNER':
-                    if (isNextKeyword(tokens, ['JOIN'])) {
-                        continue;
-                    }
-
-                    break;
                 case 'OUTER':
                     if (isNextKeyword(tokens, ['JOIN'])) {
                         continue;
@@ -1041,50 +1004,6 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'GROUP BY':
-                    while ((formatted[formatted.length - 1] || '').trim() === '') {
-                        formatted.pop();
-                    }
-
-                    if (stack.peek(-1) === 'ON') {
-                        if (stack.getMargin() === 4) {
-                            setStack('BY', 1)
-
-                        } else if (stack.peek(-2) === 'INLINE' && stack.peek(-3) === 'WITH') {
-                            setStack('BY', -4)
-
-                        } else if ([stack.peek(-2), stack.peek(-3)].includes('WITH')) {
-                            setStack('BY', -3)
-
-                        } else {
-                            setStack('BY', -4)
-
-                        }
-
-                    } else {
-                        if (stack.peek() === 'BY') {
-
-                        } else if (stack.peek() === 'JOIN') {
-                            setStack('BY', opt.startingWidth - 6)
-
-                        } else if (['FUNCTION', 'SELECT', 'INLINE', 'ON'].includes(stack.peek())) {
-                            setStack('BY', opt.startingWidth - 5)
-
-                        } else if (stack.getMargin() === 0) {
-                            setStack('BY', opt.startingWidth - 1)
-
-                        } else {
-                            setStack('BY', opt.startingWidth - 6)
-
-                        }
-                    }
-
-                    if (['INLINE', 'SELECT', 'ON', 'FUNCTION'].includes(stack.peek(-2))) {
-                        setMargin(0, opt.startingWidth - 2, -2)
-                    } else {
-                        setMargin(0, opt.startingWidth - 3, -1)
-                    }
-
-                    break;
                 case 'ORDER BY':
                     while ((formatted[formatted.length - 1] || '').trim() === '') {
                         formatted.pop();

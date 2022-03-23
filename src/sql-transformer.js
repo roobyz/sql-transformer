@@ -729,6 +729,7 @@ module.exports = function format(text, opt) {
                     }
 
                     if (['INTO', 'AS', 'TABLE', 'VIEW', '(', ')'].includes(last_keyword) && isNextKeyword(tokens, ['AS'])) {
+                        trimLines()
                         setMargin(0, 0, 0);
 
                     } else if ([';', ''].includes(last_keyword)) {
@@ -742,6 +743,7 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'FROM':
+                    trimLines()
                     if (stack.peek() !== 'WITH') {
                         stack.pop();
                     }
@@ -790,7 +792,7 @@ module.exports = function format(text, opt) {
                     break;
                 case 'FULL':
                 case 'LEFT':
-                    // Check for left joins
+                    trimLines()
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
                         if (stack.peek() === 'INLINE') {
                             setMargin(0, opt.startingWidth - 3, -3)
@@ -805,6 +807,7 @@ module.exports = function format(text, opt) {
                     break;
                 case 'RIGHT':
                 case 'CROSS':
+                    trimLines()
                     if (isNextKeyword(tokens, ['OUTER', 'JOIN'])) {
                         if (stack.peek() === 'INLINE') {
                             setMargin(0, opt.startingWidth - 4, -4)
@@ -835,6 +838,7 @@ module.exports = function format(text, opt) {
                         formatted.push(' ');
 
                     } else {
+                        trimLines()
                         setMargin(2, opt.startingWidth, 0)
                     }
 
@@ -854,6 +858,7 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'WHERE':
+                    trimLines()
                     if (stack.peek() === 'JOIN') {
                         setMargin(0, opt.startingWidth, -1)
 
@@ -905,6 +910,7 @@ module.exports = function format(text, opt) {
                         setMargin(0, 5, 1)
 
                     } else {
+                        trimLines()
                         setMargin(0, opt.startingWidth + 3, 3);
                     }
 
@@ -942,6 +948,7 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'WHEN':
+                    trimLines()
                     if (last_word === 'CASE') {
                         formatted.push(' ');
 
@@ -979,6 +986,7 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'HAVING':
+                    trimLines()
                     while (stack.peek() === 'BY') {
                         stack.pop()
                     }
@@ -987,6 +995,7 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'UNION':
+                    trimLines()
                     setMargin(0, 1, 1)
 
                     break;
@@ -1017,16 +1026,17 @@ module.exports = function format(text, opt) {
                         }
 
                     } else {
-                        if (stack.peek() === 'BY') {
+                        if (stack.getMargin() === 0) {
+                            setStack('BY', opt.startingWidth - 1)
+
+                        } else if (stack.peek() === 'BY') {
+                            // pass
 
                         } else if (stack.peek() === 'JOIN') {
                             setStack('BY', opt.startingWidth - 6)
 
                         } else if (['FUNCTION', 'SELECT', 'INLINE', 'ON'].includes(stack.peek())) {
                             setStack('BY', opt.startingWidth - 5)
-
-                        } else if (stack.getMargin() === 0) {
-                            setStack('BY', opt.startingWidth - 1)
 
                         } else {
                             setStack('BY', opt.startingWidth - 6)
@@ -1287,6 +1297,10 @@ module.exports = function format(text, opt) {
             }
             setMargin(0, 5, 5)
 
+        } else if (last_keyword === 'END' && keyword === ',' && stack.peek() === 'BY') {
+            trimLines()
+            setMargin(4, opt.startingWidth + 1, 5)
+
         } else if (last_keyword === ')' && keyword === ',' && stack.peek() === 'BY') {
             trimLines()
 
@@ -1352,7 +1366,11 @@ module.exports = function format(text, opt) {
                     // pass
                 } else {
                     trimLines()
-                    setMargin(4, opt.startingWidth + 1, 5)
+                    if (stack.getMargin() === 0) {
+                        setMargin(0, opt.startingWidth + 5, 5)
+                    } else {
+                        setMargin(4, opt.startingWidth + 1, 5)
+                    }
                 }
 
             } else {

@@ -28,6 +28,10 @@ There are four user settings for configuring SQL Transformer output:
     - This is currently defaulted to block margins
     - Targeting dash comments for the default, however it hasn't been tested as heavily yet.
     - See style example(s) below
+    - Caveats with dash comments:
+      - care has been taken to ensure that comments are on their own separate lines
+      - that said, any comments that are on the same line as SQL may break your SQL
+      - be mindful of your code placement and validate that it is separated from your comments
 
   - **Outcome Comments**: *boolean* to include/exclude OUTCOME comments on CTE queries
     - This is currently defaulted to include OUTCOME comments

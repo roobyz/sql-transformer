@@ -24,25 +24,22 @@ There are four user settings for configuring SQL Transformer output:
 
 ![User Settings](./src/user_settings.png)
 
-  - **Block Comments**: *boolean* for specifying block or dash comments
-    - This is currently defaulted to block margins
-    - Targeting dash comments for the default, however it hasn't been tested as heavily yet.
-    - See style example(s) below
-    - Caveats with dash comments:
-      - care has been taken to ensure that comments are on their own separate lines
-      - that said, any comments that are on the same line as SQL may break your SQL
-      - be mindful of your code placement and validate that it is separated from your comments
-
-  - **Outcome Comments**: *boolean* to include/exclude OUTCOME comments on CTE queries
-    - This is currently defaulted to include OUTCOME comments
-    - See style example(s) below
-
-  - **Starting Width**: *integer* for specifying starting select margin
-    - Current default margin is set to 5
-    - Setting to 5 or greater allows for aligning the query on the first attribute, while capitalizing on VSCode's margin collapse functionality
-
-  - **Where One One**: *boolean* to include/exclude 'WHERE 1=1' filters
-    - Current default is to include
+* **Block Comments**: *boolean* for specifying block or dash comments
+  * This is currently defaulted to block margins
+  * Targeting dash comments for the default, however it hasn't been tested as heavily yet.
+  * See style example(s) below
+  * Caveats with dash comments:
+    * care has been taken to ensure that comments are on their own separate lines
+    * that said, any comments that are on the same line as SQL may break your SQL
+    * be mindful of your code placement and validate that it is separated from your comments
+* **Outcome Comments**: *boolean* to include/exclude OUTCOME comments on CTE queries
+  * This is currently defaulted to include OUTCOME comments
+  * See style example(s) below
+* **Starting Width**: *integer* for specifying starting select margin
+  * Current default margin is set to 5
+  * Setting to 5 or greater allows for aligning the query on the first attribute, while capitalizing on VSCode's margin collapse functionality
+* **Where One One**: *boolean* to include/exclude 'WHERE 1=1' filters
+  * Current default is to include
 
 ## SQL style example
 
@@ -263,6 +260,7 @@ WITH
 ## Todo
 
 Update and enhance as necessary to:
+
 * include VSCode user settings for adjusting output preferences
 * improve Snowflake SQL compatibility
 * work seamlessly with DBT (Data Build Tool)
@@ -274,7 +272,8 @@ Run `npm run test` to test code changes on our sample.sql file
 ## Credits
 
 Thanks for the inspiration and examples:
-* Opensource: https://opensource.com/article/20/6/vs-code-extension
-* Hello World Minimal Sample: https://github.com/microsoft/vscode-extension-samples/tree/main/helloworld-minimal-sample
-* Sql Styler: https://github.com/oboki/sql-styler
-* Prettier: https://github.com/prettier/prettier-vscode.git
+
+* [Opensource.com](https://opensource.com/article/20/6/vs-code-extension)
+* [Hello World Minimal Sample](https://github.com/microsoft/vscode-extension-samples/tree/main/helloworld-minimal-sample)
+* [Sql Styler Extension](https://github.com/oboki/sql-styler)
+* [Prettier Extension](https://github.com/prettier/prettier-vscode.git)

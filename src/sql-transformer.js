@@ -574,7 +574,7 @@ module.exports = function format(text, opt) {
 
                     } else {
                         if ((formatted[formatted.length - 1] || '').trim() === '*/') {
-                            setMargin(0, 0, 0)
+                            formatted.push('\n');
                         }
                     }
                 } else if (isNextKeyword(tokens, [','])) {

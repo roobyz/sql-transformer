@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security` in case of vulnerabilities.
 
 
+## [0.3.9] - 2022-04-07
+### Changed
+- add keywords UPDATE and SET
+- update formatting for new keywords
+
+## [0.3.8] - 2022-04-07
+### Changed
+- rename logo.png to icon.png
+
+## [0.3.7] - 2022-04-07
+### Changed
+- add logo.png
+
 ## [0.3.6] - 2022-03-23
 ### Changed
 - adjust margins on BY stack

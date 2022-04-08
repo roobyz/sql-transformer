@@ -11,7 +11,7 @@
 // ----------------------------------------------------------------------------
 // What: array of SQL keywords
 // Why:  use keywords to procecss SQL blocks and assign to stack when needed
-const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
+const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'UPDATE', 'SET', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
 // ----------------------------------------------------------------------------
 // What: operators
 const owords = ['::', '/', '*', '+', '-', '%']
@@ -483,6 +483,7 @@ module.exports = function format(text, opt) {
 
                             break;
                         case 'CREATE':
+                        case 'UPDATE':
                         case 'FUNCTION':
                         case 'INTO':
                         case 'WITH':
@@ -710,6 +711,19 @@ module.exports = function format(text, opt) {
                         formatted.pushItems(' '.repeat(stack.getMargin()));
 
                     }
+
+                    break;
+                case 'UPDATE':
+                    while (stack.length) {
+                        stack.pop()
+                    }
+
+                    setStack('UPDATE', opt.startingWidth)
+
+                    break;
+                case 'SET':
+                    setMargin(0, 3, 3)
+                    setStack('SET', 5)
 
                     break;
                 case 'CREATE':
@@ -1240,8 +1254,24 @@ module.exports = function format(text, opt) {
         // ###################################################################################
         //  Process identifiers, expressions, .. etc.
         // ###################################################################################
+
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
+
+        } else if (last_keyword === 'UPDATE') {
+            trimLines()
+            setMargin(0, 0, 0)
+
+        } else if (stack.peek() === 'SET') {
+            if (keyword === ',') {
+                setMargin(0, 0, 0)
+
+            } else if (['SET', ','].includes(last_keyword)) {
+                formatted.push(' ');
+
+            } else {
+                setMargin(0, 0, 0)
+            }
 
         } else if (last_primary === 'FROM') {
             // account for NON-ANSI SQL joins

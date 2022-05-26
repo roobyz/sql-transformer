@@ -88,6 +88,7 @@
 		"build": "vsce package"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.60.0"
+		"@types/vscode": "^1.60.0",
+		"has": "^1.0.3"
 	}
 }

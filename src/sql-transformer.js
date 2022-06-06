@@ -935,7 +935,7 @@ module.exports = function format(text, opt) {
                             formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('AND') + 4));
                         }
 
-                    } else if (['ELSE'].includes(last_word)) {
+                    } else if (['ELSE', 'ORDER BY', 'GROUP BY'].includes(last_word)) {
                         formatted.push(' ');
 
                     } else if ([','].includes(last_keyword)) {
@@ -1254,7 +1254,6 @@ module.exports = function format(text, opt) {
         // ###################################################################################
         //  Process identifiers, expressions, .. etc.
         // ###################################################################################
-
         if (['SELECT', 'CREATE', 'FROM', 'JOIN', 'LIMIT', 'OR', 'CASE'].includes(last_word)) {
             formatted.push(' ');
 

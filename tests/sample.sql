@@ -339,4 +339,14 @@ UPDATE
         AND T.TABLE_SCHEMA = V.TABLE_SCHEMA
 ;
 
-
+     SELECT [CustomerID]
+          , [CompanyName]
+          , [Region]
+       FROM [dbo].[Customers]
+      WHERE 1=1
+   ORDER BY CASE WHEN [Region] IS NULL THEN 1
+                ELSE 0
+           END
+          , [Region]
+          , [CustomerID]
+;

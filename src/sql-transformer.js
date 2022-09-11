@@ -417,6 +417,7 @@ module.exports = function format(text, opt) {
 
     // Function to configure margin blocks by type
     function setStack(name, size) {
+        size = Math.max(size, 0)
         stack.push(
             {
                 type: name,

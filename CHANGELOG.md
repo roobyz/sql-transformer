@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [0.3.11] - 2022-06-05
+### Fixed
+
+- correct minimum margin bug
+
 ## [0.3.10] - 2022-06-05
 ### Fixed
 

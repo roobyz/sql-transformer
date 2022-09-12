@@ -11,7 +11,7 @@
 // ----------------------------------------------------------------------------
 // What: array of SQL keywords
 // Why:  use keywords to procecss SQL blocks and assign to stack when needed
-const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'UPDATE', 'SET', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES', 'WITHIN GROUP'];
+const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'UPDATE', 'SET', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES', 'WITHIN GROUP', 'PARTITION BY'];
 // ----------------------------------------------------------------------------
 // What: operators
 const owords = ['::', '/', '*', '+', '-', '%']
@@ -1025,40 +1025,46 @@ module.exports = function format(text, opt) {
                     }
 
                     break;
+                case 'PARTITION BY':
                 case 'GROUP BY':
                 case 'ORDER BY':
                     trimLines()
+                    if (keyword == 'PARTITION BY') {
+                        xtra = 5
+                    } else {
+                        xtra = 0
+                    }
 
                     if (stack.peek(-1) === 'ON') {
                         if (stack.getMargin() === 4) {
-                            setStack('BY', 1)
+                            setStack('BY', xtra+1)
 
                         } else if (stack.peek(-2) === 'INLINE' && stack.peek(-3) === 'WITH') {
-                            setStack('BY', -4)
+                            setStack('BY', xtra-4)
 
                         } else if ([stack.peek(-2), stack.peek(-3)].includes('WITH')) {
-                            setStack('BY', -3)
+                            setStack('BY', xtra-3)
 
                         } else {
-                            setStack('BY', -4)
+                            setStack('BY', xtra-4)
 
                         }
 
                     } else {
                         if (stack.getMargin() === 0) {
-                            setStack('BY', opt.startingWidth - 1)
+                            setStack('BY', xtra + opt.startingWidth - 1)
 
                         } else if (stack.peek() === 'BY') {
                             // pass
 
                         } else if (stack.peek() === 'JOIN') {
-                            setStack('BY', opt.startingWidth - 6)
+                            setStack('BY', xtra + opt.startingWidth - 6)
 
                         } else if (['FUNCTION', 'SELECT', 'INLINE', 'ON'].includes(stack.peek())) {
-                            setStack('BY', opt.startingWidth - 5)
+                            setStack('BY', xtra + opt.startingWidth - 5)
 
                         } else {
-                            setStack('BY', opt.startingWidth - 6)
+                            setStack('BY', xtra + opt.startingWidth - 6)
 
                         }
                     }

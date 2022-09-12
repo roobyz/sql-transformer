@@ -11,7 +11,7 @@
 // ----------------------------------------------------------------------------
 // What: array of SQL keywords
 // Why:  use keywords to procecss SQL blocks and assign to stack when needed
-const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'UPDATE', 'SET', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES'];
+const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'UPDATE', 'SET', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES', 'WITHIN'];
 // ----------------------------------------------------------------------------
 // What: operators
 const owords = ['::', '/', '*', '+', '-', '%']
@@ -985,6 +985,10 @@ module.exports = function format(text, opt) {
                     break;
                 case 'ELSE':
                     setMargin(0, 4, 4)
+
+                    break;
+                case 'WITHIN':
+                    setMargin(7, 7, 7)
 
                     break;
                 case 'END':

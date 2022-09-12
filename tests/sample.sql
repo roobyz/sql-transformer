@@ -350,3 +350,42 @@ UPDATE
           , [Region]
           , [CustomerID]
 ;
+
+ create or replace view tag_policies as
+WITH
+     tags AS (SELECT a.*
+                FROM snowflake.account_usage.tags a
+               WHERE 1=1
+                 AND a.deleted is null
+             ) ,
+     masking_policies AS (SELECT *
+                            FROM snowflake.account_usage.masking_policies
+                           WHERE 1=1
+                             AND deleted is null
+                         ) ,
+     column_info AS (SELECT b.policy_name
+                          , b.ref_entity_name AS table_nm
+                          , array_agg(DISTINCT b.ref_column_name) within group (ORDER BY b.ref_column_name) AS attributes
+                      from ( SELECT a.policy_name
+                                  , a.ref_column_name
+                                  , a.ref_entity_name
+                               FROM table(information_schema.policy_references(ref_entity_domain => 'TABLE'
+                                        , ref_entity_name =>'entitlement_test.testing.entitlements_test')) a
+                   GROUP BY 1, 2) b)
+
+--  Outcome
+     SELECT b.policy_id             AS tag_policy_id
+          , b.policy_name           AS masking_policy_nm
+          , a.tag_name              AS tag_nm
+          , a.tag_schema            AS schema
+          , a.tag_database          AS database
+          , c.table_nm
+          , c.masked_attributes
+          , b.policy_body::string   AS masking_sql
+       FROM tags a
+       JOIN masking_policies b
+         ON a.tag_schema_id   = b.policy_schema_id
+        AND a.tag_database_id = b.policy_catalog_id
+       JOIN column_info c
+         ON b.policy_name = c.policy_name
+;

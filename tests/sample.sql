@@ -369,8 +369,7 @@ WITH
                       from ( SELECT a.policy_name
                                   , a.ref_column_name
                                   , a.ref_entity_name
-                               FROM table(information_schema.policy_references(ref_entity_domain => 'TABLE'
-                                        , ref_entity_name =>'entitlement_test.testing.entitlements_test')) a
+                               FROM information_schema.policy_references a
                    GROUP BY 1, 2) b)
 
 --  Outcome

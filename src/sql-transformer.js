@@ -11,7 +11,7 @@
 // ----------------------------------------------------------------------------
 // What: array of SQL keywords
 // Why:  use keywords to procecss SQL blocks and assign to stack when needed
-const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'UPDATE', 'SET', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES', 'WITHIN'];
+const kwords = ['WITH', 'CREATE', 'SELECT', 'FROM', 'WHERE', 'AND', 'GROUP BY', 'ORDER BY', 'LEFT', 'RIGHT', 'CROSS', 'FULL', 'INNER', 'OUTER', 'JOIN', 'ON', 'CASE', 'WHEN', 'OR', 'THEN', 'ELSE', 'END', 'AS', 'OVER', 'ALL', 'UNION', 'UPDATE', 'SET', 'BETWEEN', 'HAVING', 'LIMIT', 'INSERT', 'IN', 'INTO', 'OVERWRITE', 'VALUES', 'WITHIN GROUP'];
 // ----------------------------------------------------------------------------
 // What: operators
 const owords = ['::', '/', '*', '+', '-', '%']
@@ -987,7 +987,7 @@ module.exports = function format(text, opt) {
                     setMargin(0, 4, 4)
 
                     break;
-                case 'WITHIN':
+                case 'WITHIN GROUP':
                     setMargin(7, 7, 7)
 
                     break;
@@ -1064,7 +1064,12 @@ module.exports = function format(text, opt) {
                     }
 
                     if (['INLINE', 'SELECT', 'ON', 'FUNCTION'].includes(stack.peek(-2))) {
-                        setMargin(0, opt.startingWidth - 2, -2)
+                        if (last_keyword == '(') {
+                            // pass
+                        } else {
+                            setMargin(0, opt.startingWidth - 2, -2)
+                        }
+
                     } else {
                         setMargin(0, opt.startingWidth - 3, -1)
                     }
@@ -1106,6 +1111,11 @@ module.exports = function format(text, opt) {
 
         if (['OVER'].includes(last_word)) {
             formatted.push(' ');
+        }
+
+        if (['TABLE'].includes(last_word) && keyword == '(') {
+            trimLines()
+            // formatted.pushItems('-->', stack.peek(), '<--');
         }
 
         // Remove superfloud lines
@@ -1280,6 +1290,8 @@ module.exports = function format(text, opt) {
         } else if (last_primary === 'FROM') {
             // account for NON-ANSI SQL joins
             if (keyword === ',') {
+                formatted.pushItems('-->', stack.peek(), '<--');
+
                 if (last_keyword === 'FROM') {
                     setMargin(0, 5, 5)
 

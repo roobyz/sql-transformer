@@ -14,7 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [0.3.11] - 2022-06-05
+## [0.3.12] - 2022-09-11
+### Changed
+
+- Add WITHIN GROUP keyword
+- Add PARTITION BY keyword
+
+## [0.3.11] - 2022-09-11
 ### Fixed
 
 - correct minimum margin bug

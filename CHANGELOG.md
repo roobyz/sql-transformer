@@ -14,52 +14,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-
 ## [0.3.13] - 2022-09-13
+
 ### Fixed
 
 - Account for casted case blocks
 - Correct ELSE spacing
 
 ## [0.3.12] - 2022-09-11
+
 ### Changed
 
 - Add WITHIN GROUP keyword
 - Add PARTITION BY keyword
 
 ## [0.3.11] - 2022-09-11
+
 ### Fixed
 
 - correct minimum margin bug
 
 ## [0.3.10] - 2022-06-05
+
 ### Fixed
 
 - correct spacing for CASE statements within a GROUP BY block
 
 ## [0.3.9] - 2022-04-07
+
 ### Changed
 
 - add keywords UPDATE and SET
 - update formatting for new keywords
 
 ## [0.3.8] - 2022-04-07
+
 ### Changed
 
 - rename logo.png to icon.png
 
 ## [0.3.7] - 2022-04-07
+
 ### Changed
 
 - add logo.png
 
 ## [0.3.6] - 2022-03-23
+
 ### Changed
 
 - adjust margins on BY stack
 - further cleanup with trimLines function
 
 ## [0.3.5] - 2022-03-22
+
 ### Changed
 
 - simplify COMMENT margin code for clarity
@@ -68,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cleanup spacing with new trimLines function
 
 ## [0.3.4] - 2022-03-21
+
 ### Changed
 
 - additional margin adjustments due to startingWidth
@@ -76,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - additional comments
 
 ## [0.3.3] - 2022-03-20
+
 ### Added
 
 - setting to include/exclude OUTCOME comments on CTE queries
@@ -113,6 +123,7 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Added preliminary startingWidth to formatter
 
 ## [0.3.1] - 2022-03-18
+
 ### Changed
 
 - Adjust ELSE/END margins in CASE blocks
@@ -124,34 +135,40 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Address words with apostrophes in comment blocks
 
 ## [0.2.11] - 2022-03-17
+
 ### Changed
 
 - Updated README with known issue
 
 ## [0.2.10] - 2022-03-16
+
 ### Changed
 
 - Implement setMargin function to make code more DRY and readable
 - Adjust formatting for cast function
 - Adjust FROM formatting for NON-ANSI SQL joins
-- Adjust formatting for WHERE/CASE/BETWEEN blocks 
+- Adjust formatting for WHERE/CASE/BETWEEN blocks
 
 ## [0.2.9] - 2022-03-14
+
 ### Fixed
 
 - Formatting for WHERE block
 
 ## [0.2.8] - 2022-03-14
+
 ### Changed
 
 - Adjust formatting for OR and AND keywords in a WHERE block
 
 ## [0.2.7] - 2022-03-14
+
 ### Fixed
 
 - Ensure that WITH keywords stay keywords
 
 ## [0.2.6] - 2022-03-13
+
 ### Changed
 
 - Tweak COMMENT margins for ON blocks
@@ -160,11 +177,13 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Adjust margins for comparisons with comments in between
 
 ## [0.2.5] - 2022-03-12
+
 ### Changed
 
 - Correct comparison operator
 
 ## [0.2.4] - 2022-03-12
+
 ### Changed
 
 - Refactor function (isUpcomingKeyword-->isNextKeyword) to use array for list of values
@@ -175,6 +194,7 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Adjust formatting for INSERT INTO blocks
 
 ## [0.2.3] - 2022-03-12
+
 ### Added
 
 - New function (isUpcomingKeyword) for improved stack handling
@@ -191,11 +211,13 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - superfluous regex steps
 
 ## [0.2.2] - 2022-03-11
+
 ### Fixed
 
 - trim leading whitespaces to process comments
 
 ## [0.2.1] - 2022-03-10
+
 ### Changed
 
 - Set correct margins for COMMENT blocks within a BY block
@@ -213,6 +235,7 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Updated regex to ensure reproducible outcomes
 
 ## [0.1.11] - 2022-03-09
+
 ### Added
 
 - CROSS joins
@@ -230,11 +253,13 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Spacing for CTE blocks
 
 ## [0.1.10] - 2022-03-09
+
 ### Added
 
 - Account for the '//' comment style
 
 ## [0.1.9] - 2022-03-08
+
 ### Added
 
 - Account for left and right functions
@@ -250,11 +275,13 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Fix peekNextKeyword comparisons
 
 ## [0.1.8] - 2022-03-08
+
 ### Fixed
 
 - Constrain lone single-quotes fix to COMMENT stacks
 
 ## [0.1.7] - 2022-03-08
+
 ### Changed
 
 - Change spacing for numeric vs non-numeric BY stack values
@@ -265,6 +292,7 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Account for lone single-quotes in COMMENT stacks
 
 ## [0.1.6] - 2022-03-06
+
 ### Changed
 
 - Spacing adjustments for inlines blocks
@@ -272,23 +300,26 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Updated README.md
 
 ## [0.1.5] - 2022-03-05
+
 ### Changed
 
 - Adjust comment spacing
 - Add minimal logic to reduce dbt mangling
 
-### Fixed 
+### Fixed
 
 - Correct "from block" spacing
 - Cleanup margin stack at query end
 
 ## [0.1.4] - 2022-03-05
+
 ### Changed
 
 - adjust spaced for CASE statements
 - ensure that OUTCOME comment isn't duplicated
 
 ## [0.1.3] - 2022-03-05
+
 ### Added
 
 - support for math operators
@@ -299,17 +330,20 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - Included OR keyword logic for create table/view
   
 ## [0.1.2] - 2022-03-04
+
 ### Changed
 
 - Refactored stack.push to make it more "DRY"
 - Added "OR" keyword
   
 ## [0.1.1] - 2022-03-01
+
 ### Changed
 
 - updated README.md typo
   
 ## [0.1.0] - 2022-03-01
+
 ### Fixed
 
 - updated to support "create table as select" queries
@@ -319,17 +353,19 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - included minimal support to avoid mangling Jinja templating for DBT
 
 ## [0.0.7] - 2022-03-01
+
 ### Fixed
 
 - add check for undefined type on create or replace table statement
 
-
 ## [0.0.6] - 2022-02-28
+
 ### Changed
 
 - typo on extension name
 
 ## [0.0.5] - 2022-02-28
+
 ### Fixed
 
 - removed unused keyword (DISTINCT), which introduced a formatting bug
@@ -340,15 +376,17 @@ This release is ready for broad use on most SQL. With a focus on reproducible ou
 - added additional queries to sample.sql for testing
 
 ## [0.0.4] - 2022-02-28
+
 ### Fixed
 
 - command pallet title to "SQL Transformer: Format SQL"
 
 ## [0.0.3] - 2022-02-27
+
 ### Added
 
 - minimum viable product (MVP)
 - includes
-   - support for common table expressions (CTEs)
-   - support for inline queries
-   - basic support for create tables
+  - support for common table expressions (CTEs)
+  - support for inline queries
+  - basic support for create tables

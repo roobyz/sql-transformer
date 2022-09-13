@@ -936,7 +936,7 @@ module.exports = function format(text, opt) {
                             formatted.pushItems('\n', ' '.repeat(formatted.getPosOfKeywordPreviousLine('AND') + 4));
                         }
 
-                    } else if (['ELSE', 'ORDER BY', 'GROUP BY'].includes(last_word)) {
+                    } else if (['ORDER BY', 'GROUP BY'].includes(last_word)) {
                         formatted.push(' ');
 
                     } else if ([','].includes(last_keyword)) {
@@ -1115,7 +1115,7 @@ module.exports = function format(text, opt) {
             }
         }
 
-        if (['OVER'].includes(last_word)) {
+        if (['OVER', 'ELSE'].includes(last_keyword)) {
             formatted.push(' ');
         }
 
@@ -1387,6 +1387,8 @@ module.exports = function format(text, opt) {
 
         } else if (['WHERE', 'AND', 'BETWEEN', 'WHEN', 'THEN', 'ELSE', 'AS', 'END', 'HAVING', ')', 'INTO', 'OVERWRITE'].includes(last_keyword)) {
             if (word.includes('::')) {
+                //
+            } else if (last_keyword === 'ELSE') {
                 //
             } else if (word.includes(',') && last_keyword === 'END') {
                 setMargin(0, 0, 5)

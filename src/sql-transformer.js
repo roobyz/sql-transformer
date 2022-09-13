@@ -1037,16 +1037,16 @@ module.exports = function format(text, opt) {
 
                     if (stack.peek(-1) === 'ON') {
                         if (stack.getMargin() === 4) {
-                            setStack('BY', xtra+1)
+                            setStack('BY', xtra + 1)
 
                         } else if (stack.peek(-2) === 'INLINE' && stack.peek(-3) === 'WITH') {
-                            setStack('BY', xtra-4)
+                            setStack('BY', xtra - 4)
 
                         } else if ([stack.peek(-2), stack.peek(-3)].includes('WITH')) {
-                            setStack('BY', xtra-3)
+                            setStack('BY', xtra - 3)
 
                         } else {
-                            setStack('BY', xtra-4)
+                            setStack('BY', xtra - 4)
 
                         }
 
@@ -1393,6 +1393,10 @@ module.exports = function format(text, opt) {
             } else if (word.includes(',') && last_keyword === 'END') {
                 setMargin(0, 0, 5)
 
+            } else if (last_keyword == 'AS' && word == ',') {
+                setMargin(0, -3, -3)
+                stack.pop();
+                
             } else {
                 formatted.push(' ');
             }

@@ -388,3 +388,58 @@ WITH
        JOIN column_info c
          ON b.policy_name = c.policy_name
 ;
+
+WITH -- the CTE view name
+source 
+    AS (
+        SELECT
+             {{ surrogate_key_int(['PROD_CORP.DIV_NBR','PROD_CORP.PROD_NBR']) }}::int as DIM_PROD_SK
+            ,{{ surrogate_key_int(['PIM_USF_STD_PROD_CD']) }}::int as PIM_SK
+            ,DIV_NBR as MKT_NBR
+            ,PROD_NBR
+            ,case when prod_corp.prtry_item_ind = 'Y' then TRUE when prod_corp.prtry_item_ind = 'N' then FALSE else null end::boolean  as PRTRY_ITEM_IND
+            ,PROD_BRND
+            ,MFR_PROD_NBR
+            ,case when prod_corp.CTCH_WT_IND = 'Y' then TRUE when prod_corp.CTCH_WT_IND = 'N' then FALSE else null end::boolean as CTCH_WT_IND
+            ,SLS_UOM
+            ,PRC_UOM
+            ,DFP_CD
+            ,AP_VNDR_NBR
+            ,PRCH_FROM_VNDR_NBR
+            ,case when prod_corp.BRK_IND = 'Y' then TRUE when prod_corp.BRK_IND = 'N' then FALSE else null end::boolean as BRK_IND
+            ,PROD_NBR_CASE
+            ,LAST_PROD_COST
+            ,PRTN_UOM
+            ,PRTN_CONV_FCTR
+            ,case when prod_corp.MKT_CD_IND = 'Y' then TRUE when prod_corp.MKT_CD_IND = 'N' then FALSE else null end::boolean as MKT_CD_IND
+            ,CMDTY_IND
+            ,PROD_SHLF_LIFE
+            ,LRG_ORD_QTY
+            ,case when prod_corp.PROD_RSRVBL_IND = 'Y' then TRUE when prod_corp.PROD_RSRVBL_IND = 'N' then FALSE else null end::boolean as PROD_RSRVBL_IND
+            ,SUB_CONV_FCTR_1
+            ,HIGH_ACPT_TMPRTR
+            ,case when prod_corp.VNDR_SMALL_BUS_IND  = 'Y' then TRUE when prod_corp.VNDR_SMALL_BUS_IND = 'N' then FALSE else null end::boolean as VNDR_SMALL_BUS_IND
+            ,PRPRTRY_CUST_NBR
+            ,PRPRTRY_CUST_NM
+            ,VNDR_TI
+            ,VNDR_HI
+            ,STRTGC_SUB
+            ,STRTGC_CORE
+           ,case when prod_corp.CSH_CRY_BRKR_IND  = 'Y' then TRUE when prod_corp.CSH_CRY_BRKR_IND = 'N' then FALSE else null end::boolean as CSH_CRY_BRKR_IND
+            ,UPD_FRCST_IND
+            ,FUT_MRKT_COST_PRC_EFF_DT
+            ,FUT_MRKT_COST_UPD_DT
+            ,null::varchar(20) as SRC_CRT_USR_ID
+            ,null::varchar(20) as SRC_UPD_USR_ID
+            ,null::timestamp_ntz as SRC_CRT_TS
+            ,null::timestamp_ntz as SRC_UPD_TS
+            ,null::timestamp_ntz as CDW_CRT_TS
+            ,null::timestamp_ntz as CDW_UPD_TS
+            ,null::char(5) as DBT_REV_NBR
+            ,null::timestamp_ntz as DBT_MDL_CRT_TS
+            ,null::timestamp_ntz as DBT_MDL_UPD_TS
+        FROM {{ ref('prod') }}
+    )
+SELECT * FROM source
+
+ 

@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [0.3.13] - 2022-09-13
+### Fixed
+
+- Account for casted case blocks
+- Correct ELSE spacing
+
 ## [0.3.12] - 2022-09-11
 ### Changed
 

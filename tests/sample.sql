@@ -441,5 +441,814 @@ source
         FROM {{ ref('prod') }}
     )
 SELECT * FROM source
+;
+
+
+-- Issue: spacing for “between”
+WITH
+FISC_YR_MTH_RANGE AS (SELECT DISTINCT FISC_YR
+            , FISC_YR_MTH
+            , FISC_MTH_OF_YR
+            , CASE WHEN FISC_YR_MTH BETWEEN (SELECT FISC_YR_MTH
+                                              FROM GOLD.XDMADM.TIME_CORP
+                                             WHERE 1=1
+                                               AND CLNDR_DT = DATEADD('month', -12, CURRENT_DATE))
+                    AND (SELECT FISC_YR_MTH
+                           FROM GOLD.XDMADM.TIME_CORP
+                          WHERE 1=1
+                            AND CLNDR_DT = DATEADD('month', -1, CURRENT_DATE))
+                   THEN 'L12'
+                   WHEN FISC_YR_MTH BETWEEN (SELECT FISC_YR_MTH -300
+                                              FROM GOLD.XDMADM.TIME_CORP
+                                             WHERE 1=1
+                                               AND CLNDR_DT = DATEADD('month', -12, CURRENT_DATE))
+                    AND (SELECT FISC_YR_MTH -300
+                           FROM GOLD.XDMADM.TIME_CORP
+                          WHERE 1=1
+                            AND CLNDR_DT = DATEADD('month', -1, CURRENT_DATE))
+                   THEN 'PRIOR L12'
+              END AS TIME_PERIOD
+    FROM GOLD.XDMADM.TIME_CORP
+   WHERE 1=1
+     AND TIME_PERIOD is not null)
+
+select * from FISC_YR_MTH_RANGE
+;
+
+
+create
+       or replace table CDW_DEV.SANDBOX_Z7T6026.MTH_PMO_SPOIL_DAM_BASE (
+          FISC_YR
+        , FISC_YR_MTH
+        , FISC_MTH_OF_YR
+        , FISC_MTH_YR
+        , MARKET_TYPE_NM
+        , RGN_NM
+        , AREA_NM
+        , DIV_NM_CD_NBR
+        , COMP_BASE
+        , METRIC
+        , TOTAL_EXT_AMT
+        , TOTAL_EXT_AMT_LY
+        , MERLIN_CASES
+        , MERLIN_CASES_LY
+          ) as (
+               with FISC_YR_MTH_RANGE as (
+                       select distinct FISC_YR
+                            , FISC_YR_MTH
+                            , FISC_MTH_OF_YR
+                            , case
+                                             when FISC_YR_MTH between (
+                                           select FISC_YR_MTH
+                                             from GOLD.XDMADM.TIME_CORP
+                                            where 1=1
+                                              and CLNDR_DT=DATEADD ('month', -12, current_date)
+                                        ) and (
+                                           select FISC_YR_MTH
+                                             from GOLD.XDMADM.TIME_CORP
+                                            where 1=1
+                                              and CLNDR_DT=DATEADD ('month', -1, current_date)
+                                        )  then 'L12'
+                                             when FISC_YR_MTH between (
+                                           select FISC_YR_MTH -300
+                                             from GOLD.XDMADM.TIME_CORP
+                                            where 1=1
+                                              and CLNDR_DT=DATEADD ('month', -12, current_date)
+                                        ) and (
+                                           select FISC_YR_MTH -300
+                                             from GOLD.XDMADM.TIME_CORP
+                                            where 1=1
+                                              and CLNDR_DT=DATEADD ('month', -1, current_date)
+                                        )  then 'PRIOR L12'
+                              end as TIME_PERIOD
+                         from GOLD.XDMADM.TIME_CORP
+                        where 1=1
+                          and TIME_PERIOD is not null
+                    )
+                  , INV_ADJ as (
+                       select S."Fiscal Year" as FISC_YR
+                            , S."Fiscal Period" as FISC_MTH_OF_YR
+                            , S."GL Category"
+                            , sum(S."Total Ext Amt") as TOTAL_EXT_AMT
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                         from SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY s
+                        inner join GOLD.XDMADM.DIV_CORP D on S."Market Number"=D.DIV_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on S."Market Number"=am.DIV_NBR
+                        inner join FISC_YR_MTH_RANGE fyw on S."Fiscal Year Period"=fyw.FISC_YR_MTH
+                        where am.MARKET_TYPE_CD in ('BLD', 'ACQ')
+                          and fyw.TIME_PERIOD='L12'
+                          and S."GL Category"<>'SALES'
+                     group by S."Fiscal Year"
+                            , S."Fiscal Period"
+                            , S."GL Category"
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                    )
+
+select * from INV_ADJ
+;
 
  
+-- Issue: inner join bug and block line block comments
+create
+       or replace table CDW_DEV.SANDBOX_Z7T6026.MTH_PMO_SPOIL_DAM_BASE (
+          FISC_YR
+        , FISC_YR_MTH
+        , FISC_MTH_OF_YR
+        , FISC_MTH_YR
+        , MARKET_TYPE_NM
+        , RGN_NM
+        , AREA_NM
+        , DIV_NM_CD_NBR
+        , COMP_BASE
+        , METRIC
+        , TOTAL_EXT_AMT
+        , TOTAL_EXT_AMT_LY
+        , MERLIN_CASES
+        , MERLIN_CASES_LY
+          ) as (
+               with FISC_YR_MTH_RANGE as (
+                       select distinct FISC_YR
+                            , FISC_YR_MTH
+                            , FISC_MTH_OF_YR
+                            , case
+                                             when FISC_YR_MTH between (
+                                           select FISC_YR_MTH
+                                             from GOLD.XDMADM.TIME_CORP
+                                            where 1=1
+                                              and CLNDR_DT=DATEADD ('month', -12, current_date)
+                                        ) and (
+                                           select FISC_YR_MTH
+                                             from GOLD.XDMADM.TIME_CORP
+                                            where 1=1
+                                              and CLNDR_DT=DATEADD ('month', -1, current_date)
+                                        )  then 'L12'
+                                             when FISC_YR_MTH between (
+                                           select FISC_YR_MTH -300
+                                             from GOLD.XDMADM.TIME_CORP
+                                            where 1=1
+                                              and CLNDR_DT=DATEADD ('month', -12, current_date)
+                                        ) and (
+                                           select FISC_YR_MTH -300
+                                             from GOLD.XDMADM.TIME_CORP
+                                            where 1=1
+                                              and CLNDR_DT=DATEADD ('month', -1, current_date)
+                                        )  then 'PRIOR L12'
+                              end as TIME_PERIOD
+                         from GOLD.XDMADM.TIME_CORP
+                        where 1=1
+                          and TIME_PERIOD is not null
+                    )
+                  , INV_ADJ as (
+                       select S."Fiscal Year" as FISC_YR
+                            , S."Fiscal Period" as FISC_MTH_OF_YR
+                            , S."GL Category"
+                            , sum(S."Total Ext Amt") as TOTAL_EXT_AMT
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                         from SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY s
+                        inner join GOLD.XDMADM.DIV_CORP D on S."Market Number"=D.DIV_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on S."Market Number"=am.DIV_NBR
+                        inner join FISC_YR_MTH_RANGE fyw on S."Fiscal Year Period"=fyw.FISC_YR_MTH
+                        where am.MARKET_TYPE_CD in ('BLD', 'ACQ')
+                          and fyw.TIME_PERIOD='L12'
+                          and S."GL Category"<>'SALES'
+                     group by S."Fiscal Year"
+                            , S."Fiscal Period"
+                            , S."GL Category"
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                    )
+                  , INV_ADJ_TOT as (
+                       select S."Fiscal Year" as FISC_YR
+                            , S."Fiscal Period" as FISC_MTH_OF_YR
+                            , sum(S."Total Ext Amt") as TOTAL_EXT_AMT
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                         from SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY s
+                        inner join GOLD.XDMADM.DIV_CORP D on S."Market Number"=D.DIV_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on S."Market Number"=am.DIV_NBR
+                        inner join FISC_YR_MTH_RANGE fyw on S."Fiscal Year Period"=fyw.FISC_YR_MTH
+                        where am.MARKET_TYPE_CD in ('BLD', 'ACQ')
+                          and fyw.TIME_PERIOD='L12'
+                          and S."GL Category"<>'SALES'
+                     group by S."Fiscal Year"
+                            , S."Fiscal Period"
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                    )
+                  , INV_ADJ_VOL as (
+                       select S."Fiscal Year" as FISC_YR
+                            , S."Fiscal Period" as FISC_MTH_OF_YR
+                            , sum(S."MerlinCases") as MERLIN_CASES
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                         from SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY s
+                        inner join GOLD.XDMADM.DIV_CORP D on S."Market Number"=D.DIV_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on S."Market Number"=am.DIV_NBR
+                        inner join FISC_YR_MTH_RANGE fyw on S."Fiscal Year Period"=fyw.FISC_YR_MTH
+                        where am.MARKET_TYPE_CD in ('BLD', 'ACQ')
+                          and fyw.TIME_PERIOD='L12'
+                          and S."GL Category"='SALES'
+                     group by S."Fiscal Year"
+                            , S."Fiscal Period"
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                    )
+
+                  , INV_ADJ_LY as (
+                       select S."Fiscal Year" as FISC_YR
+                            , S."Fiscal Period" as FISC_MTH_OF_YR
+                            , S."GL Category"
+                            , sum(S."Total Ext Amt") as TOTAL_EXT_AMT
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                         from SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY s
+                        inner join GOLD.XDMADM.DIV_CORP D on S."Market Number"=D.DIV_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on S."Market Number"=am.DIV_NBR
+                        inner join FISC_YR_MTH_RANGE fyw on S."Fiscal Year Period"=fyw.FISC_YR_MTH
+                        where am.MARKET_TYPE_CD in ('BLD', 'ACQ')
+                          and fyw.TIME_PERIOD='PRIOR L12'
+                          and S."GL Category"<>'SALES'
+                     group by S."Fiscal Year"
+                            , S."Fiscal Period"
+                            , S."GL Category"
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                    )
+                  , INV_ADJ_TOT_LY as (
+                       select S."Fiscal Year" as FISC_YR
+                            , S."Fiscal Period" as FISC_MTH_OF_YR
+                            , sum(S."Total Ext Amt") as TOTAL_EXT_AMT
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                         from SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY s
+                        inner join GOLD.XDMADM.DIV_CORP D on S."Market Number"=D.DIV_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on S."Market Number"=am.DIV_NBR
+                        inner join FISC_YR_MTH_RANGE fyw on S."Fiscal Year Period"=fyw.FISC_YR_MTH
+                        where am.MARKET_TYPE_CD in ('BLD', 'ACQ')
+                          and fyw.TIME_PERIOD='PRIOR L12'
+                          and S."GL Category"<>'SALES'
+                     group by S."Fiscal Year"
+                            , S."Fiscal Period"
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                    )
+                  , INV_ADJ_VOL_LY as (
+                       select S."Fiscal Year" as FISC_YR
+                            , S."Fiscal Period" as FISC_MTH_OF_YR
+                            , sum(S."MerlinCases") as MERLIN_CASES
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                         from SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY s
+                        inner join GOLD.XDMADM.DIV_CORP D on S."Market Number"=D.DIV_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on S."Market Number"=am.DIV_NBR
+                        inner join FISC_YR_MTH_RANGE fyw on S."Fiscal Year Period"=fyw.FISC_YR_MTH
+                        where am.MARKET_TYPE_CD in ('BLD', 'ACQ')
+                          and fyw.TIME_PERIOD='PRIOR L12'
+                          and S."GL Category"='SALES'
+                     group by S."Fiscal Year"
+                            , S."Fiscal Period"
+                            , d.DIV_NM_CD_NBR
+                            , D.AREA_NM
+                            , D.RGN_NM
+                    )
+
+                    -- ---------------------------------------------------------
+                    --                          BASE                           
+                    -- ---------------------------------------------------------
+​
+                  , INV_ADJ_BASE as (
+                       select T.FISC_YR
+                            , T.FISC_YR_MTH
+                            , T.FISC_MTH_OF_YR
+                            , 'MTH '||T.FISC_MTH_OF_YR as FISC_MTH_YR
+                            , AM.MARKET_TYPE_NM
+                            , S.RGN_NM
+                            , S.AREA_NM
+                            , S.DIV_NM_CD_NBR
+                            , S."GL Category" as METRIC
+                            , sum(S.TOTAL_EXT_AMT) as TOTAL_EXT_AMT
+                            , '0' as TOTAL_EXT_AMT_LY
+                            , sum(a.MERLIN_CASES) as MERLIN_CASES
+                            , '0' as MERLIN_CASES_LY
+                         from INV_ADJ as S
+                    left join INV_ADJ_VOL as A on S.FISC_YR=A.FISC_YR
+                          and S.FISC_MTH_OF_YR=A.FISC_MTH_OF_YR
+                          and S.DIV_NM_CD_NBR=A.DIV_NM_CD_NBR
+                        inner join GOLD.XDMADM.TIME_CORP T on S.FISC_YR=T.FISC_YR
+                          and S.FISC_MTH_OF_YR=T.FISC_MTH_OF_YR
+                        inner join GOLD.XDMADM.DIV_CORP D on S.DIV_NM_CD_NBR=D.DIV_NM_CD_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on D.DIV_NBR=am.DIV_NBR
+                     group by T.FISC_YR
+                            , T.FISC_YR_MTH
+                            , T.FISC_MTH_OF_YR
+                            , AM.MARKET_TYPE_NM
+                            , S.DIV_NM_CD_NBR
+                            , S.AREA_NM
+                            , S.RGN_NM
+                            , S."GL Category"
+                    -- -------------------------------------------------
+                        union
+                    -- -------------------------------------------------
+                       select T.FISC_YR+3 as FISC_YR
+                            , T.FISC_YR_MTH+300 as FISC_YR_MTH
+                            , T.FISC_MTH_OF_YR
+                            , 'MTH '||T.FISC_MTH_OF_YR as FISC_MTH_YR
+                            , AM.MARKET_TYPE_NM
+                            , S.RGN_NM
+                            , S.AREA_NM
+                            , S.DIV_NM_CD_NBR
+                            , S."GL Category" as METRIC
+                            , '0' as TOTAL_EXT_AMT
+                            , sum(S.TOTAL_EXT_AMT) as TOTAL_EXT_AMT_LY
+                            , '0' as MERLIN_CASES
+                            , sum(a.MERLIN_CASES) as MERLIN_CASES_LY
+                         from INV_ADJ_LY as S
+                    left join INV_ADJ_VOL_LY as A on S.FISC_YR=A.FISC_YR
+                          and S.FISC_MTH_OF_YR=A.FISC_MTH_OF_YR
+                          and S.DIV_NM_CD_NBR=A.DIV_NM_CD_NBR
+                        inner join GOLD.XDMADM.TIME_CORP T on S.FISC_YR=T.FISC_YR
+                          and S.FISC_MTH_OF_YR=T.FISC_MTH_OF_YR
+                        inner join GOLD.XDMADM.DIV_CORP D on S.DIV_NM_CD_NBR=D.DIV_NM_CD_NBR
+                        inner join BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am on D.DIV_NBR=am.DIV_NBR
+                     group by T.FISC_YR
+                            , T.FISC_YR_MTH
+                            , T.FISC_MTH_OF_YR
+                            , AM.MARKET_TYPE_NM
+                            , S.DIV_NM_CD_NBR
+                            , S.AREA_NM
+                            , S.RGN_NM
+                            , S."GL Category"
+                    )
+                    -- -----------------------------------------------------------------
+                    --                             OUTCOME                             
+                    -- -----------------------------------------------------------------
+             select FISC_YR
+                  , FISC_YR_MTH
+                  , FISC_MTH_OF_YR
+                  , FISC_MTH_YR
+                  , MARKET_TYPE_NM
+                  , RGN_NM
+                  , AREA_NM
+                  , DIV_NM_CD_NBR
+                  , '2019' as COMP_BASE
+                  , METRIC
+                  , sum(TOTAL_EXT_AMT) TOTAL_EXT_AMT
+                  , sum(TOTAL_EXT_AMT_LY) TOTAL_EXT_AMT_LY
+                  , sum(MERLIN_CASES) MERLIN_CASES
+                  , sum(MERLIN_CASES_LY) MERLIN_CASES_LY
+               from INV_ADJ_BASE
+           group by FISC_YR
+                  , FISC_YR_MTH
+                  , FISC_MTH_OF_YR
+                  , FISC_MTH_YR
+                  , MARKET_TYPE_NM
+                  , RGN_NM
+                  , AREA_NM
+                  , DIV_NM_CD_NBR
+                  , METRIC
+          );
+ 
+-- Issue: case after select
+WITH
+     USAGE_PARSED AS (
+         SELECT split_part(CLIENT_APPLICATION_ID, ' ', 0) AS CLIENT_APPLICATION_ID
+              , PARSE_JSON(CLIENT_ENVIRONMENT):OS::string AS PJ_OS
+              , PARSE_JSON(CLIENT_ENVIRONMENT):APPLICATION::string AS PJ_APPLICATION
+              , PARSE_JSON(CLIENT_ENVIRONMENT):BROWSER_VERION::string AS PJ_BROWSER
+              , ROLE_NAME
+              , WAREHOUSE_NAME
+              , USER_NAME
+              , CLIENT_ENVIRONMENT
+              , QUERY_ID
+           FROM "BUSINESS_ANALYTICS"."PERFORMANCE_CHECKS"."BIM_ACCT_USAGE"
+          WHERE 1=1
+            AND end_time >= DATEADD(Day, -30, current_date))
+   , USAGE_TRANSFORMED AS (
+         SELECT CASE WHEN PJ_APPLICATION LIKE '%alation%' THEN 'Alation'
+                     WHEN PJ_APPLICATION LIKE '%Tableau%' THEN 'Tableau'
+                     WHEN PJ_APPLICATION LIKE '%org%'
+                      AND PJ_OS like 'amzn1' THEN 'AWS Linux'
+                     WHEN PJ_APPLICATION LIKE '%amazonaws%' THEN 'AWS'
+                     WHEN PJ_APPLICATION LIKE '%amazon%' THEN 'AWS'
+                     WHEN PJ_APPLICATION LIKE '%PythonConnector%'
+                     THEN 'PythonConnector'
+                     WHEN PJ_APPLICATION LIKE '%SnowSQL%' THEN 'SnowSQL'
+                     WHEN PJ_APPLICATION LIKE 'dbt' THEN 'dbt'
+                     WHEN PJ_APPLICATION LIKE '%EXCELEX%' OR PJ_APPLICATION LIKE '%EXCEL%'
+                     THEN 'Excel'
+                     WHEN PJ_APPLICATION LIKE '%MSACCES%' THEN 'MS Access'
+                     WHEN PJ_APPLICATION LIKE '%Alteryx%' THEN 'Alteryx'
+                     WHEN PJ_APPLICATION LIKE '%MashupEnginePowerBI%' OR PJ_APPLICATION LIKE '%Microsoft.Mashup.Container%'
+                     THEN 'PowerBI'
+                     WHEN PJ_APPLICATION LIKE '%apache.catalina%'
+                     THEN 'Catalina Salesforce'
+                     WHEN PJ_APPLICATION LIKE '%org.mule.runtime.module.reboot.MuleContainerBootstrap%'
+                     THEN 'Mule Salesforce'
+                     WHEN PJ_APPLICATION LIKE '%ADDINS%' THEN 'Microsoft Add-ins'
+                     WHEN PJ_APPLICATION LIKE '%powershell%' OR PJ_APPLICATION LIKE '%PowerShell%'
+                     THEN 'PowerShell'
+                     WHEN PJ_APPLICATION LIKE '%kafka%' THEN 'Kafka'
+                     WHEN PJ_APPLICATION LIKE '%intellij%' THEN 'Java Intellij'
+                     WHEN PJ_APPLICATION LIKE '%DataGuru%' THEN 'Data Guru'
+                     WHEN PJ_APPLICATION LIKE '%forgerock.openidm%'
+                     THEN 'openidm'
+                     WHEN PJ_APPLICATION LIKE '%AutomationAnywhereEnterprise%'
+                     THEN 'Automation Anywhere Enterprise'
+                     WHEN PJ_APPLICATION LIKE '%Rscript%'or PJ_APPLICATION LIKE '%RStudio%'
+                     THEN 'Rstudio'
+                     WHEN PJ_APPLICATION LIKE '%surefirebooter%' THEN 'Surefire Booter'
+                     WHEN PJ_APPLICATION LIKE '%nqsserver%' THEN 'ORACLE OBIS (OBIEE)'
+                     WHEN PJ_APPLICATION LIKE '%MashupEngine%' THEN 'Microsoft tool connection (Power Query or similar)'
+                     WHEN PJ_APPLICATION LIKE '%dinesh%' OR PJ_APPLICATION LIKE '%Dinesh%'
+                     THEN 'Individual User: Dinesh'
+                     WHEN split_part(CLIENT_APPLICATION_ID, ' ', 0) ='Snowflake'
+                     THEN 'Snowflake'
+                     WHEN PJ_APPLICATION IS NULL THEN 'OTHER:' || split_part(CLIENT_APPLICATION_ID, ' ', 0)
+                     ELSE PJ_APPLICATION
+                END AS APPLICATION
+              , CLIENT_ENVIRONMENT
+              , ROLE_NAME
+              , WAREHOUSE_NAME
+              , USER_NAME
+              , QUERY_ID
+           FROM USAGE_PARSED)
+   , USAGE_FINAL AS (
+         SELECT ROLE_NAME
+              , WAREHOUSE_NAME
+              , USER_NAME
+              , CLIENT_ENVIRONMENT
+              , QUERY_ID
+              , CASE WHEN APPLICATION IN ('Alteryx', 'Data Guru', 'dbt', 'Fivetran', 'isql', 'Kafka', 'mobilize.net'
+                                        , 'Quest_ToadDataPoint', 'org.apache.spark.deploy.SparkSubmit', 'ORACLE OBIS (OBIEE)'
+                                        , 'CInformatica1051clientsPowerCenterClientclientbinp', 'pmdtm','INFA_IICS')
+                       OR APPLICATION LIKE 'EOracle%'
+                     THEN 'ETL'
+                     WHEN APPLICATION IN ('Automation Anywhere Enterprise','CData_Software')
+                     THEN 'Enterprise Automation'
+                     WHEN APPLICATION IN ('com.install4j.runtime.launcher.MacLauncher', 'cucumber.api.cli.Main', 'openidm'
+                                        , 'Java Intellij','org.testng.remote.RemoteTestNG', 'OTHER:JDBC', 'Surefire Booter'
+                                        , 'weblogic.Server')
+                     THEN 'Java'
+                     WHEN APPLICATION IN ('Excel', 'Microsoft Add-ins', 'MS Access', 'PowerBI', 'PowerShell'
+                                        , 'Microsoft tool connection (Power Query or similar)')
+                     THEN 'Microsoft Tools'
+                     WHEN APPLICATION IN ('Catalina Salesforce', 'com.sforce.connector.WaveAgentMain', 'Mule Salesforce')
+                     THEN 'Salesforce'
+                     ELSE APPLICATION
+                END AS APPLICATION_TYPE
+              , APPLICATION
+           FROM USAGE_TRANSFORMED)
+ 
+--  Outcome
+     SELECT APPLICATION_TYPE
+          , ROLE_NAME
+          -- , WAREHOUSE_NAME
+          , COUNT(DISTINCT USER_NAME) AS QTY_USERS
+          , COUNT(Query_ID) AS QTY_QUERIES
+       FROM USAGE_FINAL
+   GROUP BY 1, 2
+   ORDER BY QTY_QUERIES DESC
+;
+
+
+
+create or replace view VW_WKLY_PMO_SPOIL_DAM_BASE(
+                    FISC_YR,
+                    FISC_YR_MTH,
+                    FISC_WK_OF_PRD,
+                    FISC_MTH_OF_YR,
+                    FISC_WK_OF_YR,
+                    FISC_YR_WK,
+                    DIV_NM_CD_NBR,
+                    MARKET_TYPE_NM,
+                    AREA_NM,
+                    RGN_NM,
+                    LW_FLAG,
+                    L4_FLAG,
+                    L13_FLAG,
+                   COMP_BASE,
+                    METRIC,
+                    TOTAL_EXT_AMT,
+                    TOTAL_EXT_AMT_LY,
+                    MERLIN_CASES,
+                    MERLIN_CASES_LY
+) as (
+​WITH TIME_FLGS AS (
+select max(clndr_dt) max_clndr_dt,
+  max(case when CLNDR_DT = DATEADD('days', -7, CURRENT_DATE) THEN '1' ELSE '0' END) as LW_FLAG,
+  max(case when CLNDR_DT > DATEADD('days', -28, CURRENT_DATE) and CLNDR_DT < DATEADD('days', -7, CURRENT_DATE) HEN '1' ELSE '0' END) as L4_FLAG,
+  max(case when CLNDR_DT > DATEADD('days', -91, CURRENT_DATE) and CLNDR_DT < DATEADD('days', -7, CURRENT_DATE) THEN '1' ELSE '0' END) as L13_FLAG,
+  FISC_WK_OF_YR
+from gold.xdmadm.time_corp
+where CLNDR_DT > DATEADD('days', -91, CURRENT_DATE) and CLNDR_DT < CURRENT_DATE --made a change
+group by FISC_WK_OF_YR) 
+, FISC_YR_WK_RANGE AS (
+SELECT DISTINCT FISC_YR_WK ,CASE WHEN FISC_YR_WK BETWEEN (SELECT FISC_YR_WK FROM GOLD.XDMADM.TIME_CORP WHERE CLNDR_DT = CURRENT_DATE - 91)
+                                                             AND (SELECT FISC_YR_WK FROM GOLD.XDMADM.TIME_CORP WHERE CLNDR_DT = CURRENT_DATE - 7)
+                                         THEN 'L13'
+                      WHEN FISC_YR_WK BETWEEN (SELECT FISC_YR_WK - 300 FROM GOLD.XDMADM.TIME_CORP WHERE CLNDR_DT = CURRENT_DATE - 91) //cesare 4/8/22 update for 2019
+                                                             AND (SELECT FISC_YR_WK - 300 FROM GOLD.XDMADM.TIME_CORP WHERE CLNDR_DT = CURRENT_DATE - 7) //cesare 4/8/22 update for 2019
+                                         THEN 'PRIOR L13'
+                    END AS TIME_PERIOD
+FROM GOLD.XDMADM.TIME_CORP
+WHERE TIME_PERIOD IS NOT NULL 
+)
+, INV_ADJ AS (
+  SELECT
+S."Fiscal Year" AS FISC_YR
+,S."Fiscal Week" AS  FISC_WK_OF_YR
+,S."GL Category"  
+,SUM(S."Total Ext Amt") AS TOTAL_EXT_AMT
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM
+  FROM SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY  s
+  INNER JOIN GOLD.XDMADM.DIV_CORP D
+ON S."Market Number" = D.DIV_NBR
+INNER JOIN BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am
+ON S."Market Number"  = am.DIV_NBR
+INNER JOIN FISC_YR_WK_RANGE fyw
+ON S."Fiscal Year Week" = fyw.FISC_YR_WK
+where am.MARKET_TYPE_CD IN ('BLD', 'ACQ') 
+AND fyw.TIME_PERIOD = 'L13'              
+AND S."GL Category"  <> 'SALES' 
+group by
+S."Fiscal Year"
+,S."Fiscal Week"
+,S."GL Category"  
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM )
+, INV_ADJ_TOT as (
+  SELECT
+S."Fiscal Year" AS FISC_YR
+,S."Fiscal Week" AS  FISC_WK_OF_YR
+,SUM(S."Total Ext Amt") AS TOTAL_EXT_AMT
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM
+ FROM SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY  s
+  INNER JOIN GOLD.XDMADM.DIV_CORP D
+ON S."Market Number" = D.DIV_NBR
+INNER JOIN BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am
+ON S."Market Number"  = am.DIV_NBR
+INNER JOIN FISC_YR_WK_RANGE fyw
+ON S."Fiscal Year Week" = fyw.FISC_YR_WK
+where am.MARKET_TYPE_CD IN ('BLD', 'ACQ')   
+AND fyw.TIME_PERIOD = 'L13'  
+AND S."GL Category"  <> 'SALES'  
+group by
+S."Fiscal Year"
+,S."Fiscal Week"
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM)
+, INV_ADJ_VOL as (
+  SELECT
+S."Fiscal Year" AS FISC_YR
+,S."Fiscal Week" AS FISC_WK_OF_YR
+,SUM(S."MerlinCases") AS MERLIN_CASES
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM
+ FROM SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY  s
+  INNER JOIN GOLD.XDMADM.DIV_CORP D
+ON S."Market Number" = D.DIV_NBR
+INNER JOIN BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am
+ON S."Market Number"  = am.DIV_NBR
+INNER JOIN FISC_YR_WK_RANGE fyw
+ON S."Fiscal Year Week" = fyw.FISC_YR_WK
+where am.MARKET_TYPE_CD IN ('BLD', 'ACQ')  
+AND fyw.TIME_PERIOD = 'L13'
+AND S."GL Category"  = 'SALES'  
+group by
+S."Fiscal Year"
+,S."Fiscal Week"
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM
+)
+// START OF LY 
+, INV_ADJ_LY AS (
+  SELECT
+S."Fiscal Year" AS FISC_YR
+,S."Fiscal Week" AS  FISC_WK_OF_YR
+,S."GL Category"  
+,SUM(S."Total Ext Amt") AS TOTAL_EXT_AMT
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM
+  FROM SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY  s
+  INNER JOIN GOLD.XDMADM.DIV_CORP D
+ON S."Market Number" = D.DIV_NBR
+INNER JOIN BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am
+ON S."Market Number"  = am.DIV_NBR
+INNER JOIN FISC_YR_WK_RANGE fyw
+ON S."Fiscal Year Week" = fyw.FISC_YR_WK
+where am.MARKET_TYPE_CD IN ('BLD', 'ACQ')   
+AND fyw.TIME_PERIOD = 'PRIOR L13'                
+AND S."GL Category"  <> 'SALES' 
+group by
+S."Fiscal Year"
+,S."Fiscal Week"
+,S."GL Category"  
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM )
+, INV_ADJ_TOT_LY as (
+  SELECT
+S."Fiscal Year" AS FISC_YR
+,S."Fiscal Week" AS  FISC_WK_OF_YR
+,SUM(S."Total Ext Amt") AS TOTAL_EXT_AMT
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM
+  FROM SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY  s
+  INNER JOIN GOLD.XDMADM.DIV_CORP D
+ON S."Market Number" = D.DIV_NBR
+INNER JOIN BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am
+ON S."Market Number"  = am.DIV_NBR
+INNER JOIN FISC_YR_WK_RANGE fyw
+ON S."Fiscal Year Week" = fyw.FISC_YR_WK
+where am.MARKET_TYPE_CD IN ('BLD', 'ACQ')   
+AND  fyw.TIME_PERIOD = 'PRIOR L13'   
+AND S."GL Category"  <> 'SALES'  
+group by
+S."Fiscal Year"
+,S."Fiscal Week"
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM)
+, INV_ADJ_VOL_LY as (
+  SELECT
+S."Fiscal Year" AS FISC_YR
+,S."Fiscal Week" AS FISC_WK_OF_YR
+,SUM(S."MerlinCases") AS MERLIN_CASES
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM
+  FROM SUPPLY_CHAIN.SUPPLY_CHAIN.IA_CATEGORY_SUMMARY  s
+  INNER JOIN GOLD.XDMADM.DIV_CORP D
+ON S."Market Number" = D.DIV_NBR
+INNER JOIN BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am
+ON S."Market Number"  = am.DIV_NBR
+INNER JOIN FISC_YR_WK_RANGE fyw
+ON S."Fiscal Year Week" = fyw.FISC_YR_WK
+where am.MARKET_TYPE_CD IN ('BLD', 'ACQ')  
+AND fyw.TIME_PERIOD = 'PRIOR L13'
+AND S."GL Category"  = 'SALES'  
+group by
+S."Fiscal Year"
+,S."Fiscal Week"
+,d.DIV_NM_CD_NBR
+,D.AREA_NM
+,D.RGN_NM
+) 
+ , INV_ADJ_BASE AS (
+    select
+  T.FISC_YR
+, T.FISC_YR_MTH
+, T.FISC_MTH_OF_YR
+ , T.FISC_WK_OF_PRD
+, T.FISC_YR_WK   
+ ,'WK '||T.FISC_WK_OF_YR as FISC_WK_OF_YR
+,AM.MARKET_TYPE_NM 
+ , W.LW_FLAG
+, W.L4_FLAG 
+ , W.L13_FLAG
+,S.DIV_NM_CD_NBR
+ ,S.AREA_NM
+,S.RGN_NM
+,S."GL Category"  AS METRIC
+,SUM(S.TOTAL_EXT_AMT) AS TOTAL_EXT_AMT
+,'0' AS TOTAL_EXT_AMT_LY
+,SUM(a.MERLIN_CASES) AS MERLIN_CASES
+,'0' AS MERLIN_CASES_LY
+   FROM INV_ADJ AS S
+   LEFT JOIN INV_ADJ_VOL AS A ON 
+     S.FISC_YR          =     A.FISC_YR
+AND S.FISC_WK_OF_YR    =           A.FISC_WK_OF_YR
+AND S.DIV_NM_CD_NBR    =         A.DIV_NM_CD_NBR
+ INNER JOIN GOLD.XDMADM.TIME_CORP T ON S.FISC_YR = T.FISC_YR AND S.FISC_WK_OF_YR = T.FISC_WK_OF_YR
+ INNER JOIN TIME_FLGS W
+ON T.FISC_WK_OF_YR = W.FISC_WK_OF_YR
+INNER JOIN GOLD.XDMADM.DIV_CORP D
+ON S.DIV_NM_CD_NBR = D.DIV_NM_CD_NBR 
+ INNER JOIN BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am    
+ ON D.DIV_NBR = am.DIV_NBR  
+   GROUP BY
+  T.FISC_YR
+, T.FISC_YR_MTH
+, T.FISC_MTH_OF_YR
+ , T.FISC_WK_OF_PRD
+, T.FISC_YR_WK   
+ ,T.FISC_WK_OF_YR
+,AM.MARKET_TYPE_NM 
+ , W.LW_FLAG
+, W.L4_FLAG 
+ , W.L13_FLAG   
+ ,S.DIV_NM_CD_NBR
+ ,S.AREA_NM
+,S.RGN_NM
+,S."GL Category"
+   UNION
+   select
+ T.FISC_YR + 3 AS FISC_YR //cesare 4/8/22 update for 2019
+, T.FISC_YR_MTH + 300 AS FISC_YR_MTH //cesare 4/8/22 update for 2019
+, T.FISC_MTH_OF_YR
+, T.FISC_WK_OF_PRD
+, T.FISC_YR_WK + 300 AS FISC_YR_WK    //cesare 4/8/22 update for 2019
+,'WK '||T.FISC_WK_OF_YR as FISC_WK_OF_YR
+,AM.MARKET_TYPE_NM 
+, W.LW_FLAG
+, W.L4_FLAG 
+, W.L13_FLAG
+,S.DIV_NM_CD_NBR
+,S.AREA_NM
+,S.RGN_NM
+,S."GL Category"  AS METRIC
+,'0' AS TOTAL_EXT_AMT
+,SUM(S.TOTAL_EXT_AMT) AS TOTAL_EXT_AMT_LY
+,'0' AS MERLIN_CASES
+,SUM(a.MERLIN_CASES) AS MERLIN_CASES_LY
+  FROM INV_ADJ_LY AS S
+  LEFT JOIN INV_ADJ_VOL_LY AS A ON 
+    S.FISC_YR          =      A.FISC_YR
+AND S.FISC_WK_OF_YR    =            A.FISC_WK_OF_YR
+AND S.DIV_NM_CD_NBR    =          A.DIV_NM_CD_NBR
+INNER JOIN GOLD.XDMADM.TIME_CORP T ON S.FISC_YR = T.FISC_YR AND S.FISC_WK_OF_YR = T.FISC_WK_OF_YR
+INNER JOIN TIME_FLGS W
+ON T.FISC_WK_OF_YR = W.FISC_WK_OF_YR
+INNER JOIN GOLD.XDMADM.DIV_CORP D
+ON S.DIV_NM_CD_NBR = D.DIV_NM_CD_NBR   
+INNER JOIN BUSINESS_ANALYTICS.ANALYTICS.VIEW_ACTIVE_MARKETS am    
+ON D.DIV_NBR = am.DIV_NBR    
+  GROUP BY
+ T.FISC_YR
+, T.FISC_YR_MTH
+, T.FISC_MTH_OF_YR
+, T.FISC_WK_OF_PRD
+, T.FISC_YR_WK   
+,T.FISC_WK_OF_YR
+,AM.MARKET_TYPE_NM 
+, W.LW_FLAG
+, W.L4_FLAG 
+, W.L13_FLAG   
+,S.DIV_NM_CD_NBR
+,S.AREA_NM
+,S.RGN_NM
+,S."GL Category"
+) 
+SELECT
+FISC_YR
+,FISC_YR_MTH
+,FISC_WK_OF_PRD
+,FISC_MTH_OF_YR
+,FISC_WK_OF_YR  
+,FISC_YR_WK
+,DIV_NM_CD_NBR
+,MARKET_TYPE_NM  
+,AREA_NM
+,RGN_NM
+,LW_FLAG   
+,L4_FLAG     
+,L13_FLAG   
+,'2019' as COMP_BASE //cesare 4/8/22 for 2019 data
+,METRIC
+,SUM(TOTAL_EXT_AMT) TOTAL_EXT_AMT
+,SUM(TOTAL_EXT_AMT_LY) TOTAL_EXT_AMT_LY
+,SUM(MERLIN_CASES) MERLIN_CASES
+,SUM(MERLIN_CASES_LY) MERLIN_CASES_LY
+FROM INV_ADJ_BASE
+GROUP BY
+FISC_YR
+,FISC_YR_MTH
+,FISC_WK_OF_PRD
+,FISC_MTH_OF_YR
+,FISC_WK_OF_YR  
+,FISC_YR_WK
+,DIV_NM_CD_NBR
+,MARKET_TYPE_NM  
+,AREA_NM
+,RGN_NM
+,LW_FLAG   
+,L4_FLAG     
+,L13_FLAG
+,METRIC)
+;

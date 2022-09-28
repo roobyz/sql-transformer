@@ -1121,7 +1121,6 @@ module.exports = function format(text, opt) {
 
         if (['TABLE'].includes(last_word) && keyword == '(') {
             trimLines()
-            // formatted.pushItems('-->', stack.peek(), '<--');
         }
 
         // Remove superfloud lines
@@ -1296,8 +1295,6 @@ module.exports = function format(text, opt) {
         } else if (last_primary === 'FROM') {
             // account for NON-ANSI SQL joins
             if (keyword === ',') {
-                formatted.pushItems('-->', stack.peek(), '<--');
-
                 if (last_keyword === 'FROM') {
                     setMargin(0, 5, 5)
 
@@ -1507,6 +1504,7 @@ module.exports = function format(text, opt) {
 
     }
     // formatted.pushItems('-->', 'chk0', '<--');
+    // formatted.pushItems('-->', stack.peek(), '<--');
     // formatted.pushItems('-->', stack.peek(-2), '-*-', stack.getMargin(), '-*-', last_primary, '<--');
     return output;
 }

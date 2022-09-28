@@ -1019,7 +1019,7 @@ module.exports = function format(text, opt) {
 
                     break;
                 case 'BETWEEN':
-                    if (isNextKeyword(tokens, ['AND'])) {
+                    if (isNextKeyword(tokens, ['AND']) || peekNextWord(tokens) === '(') {
                         setStack('BETWEEN', 0)
                         formatted.push(' ');
                     }
@@ -1396,7 +1396,7 @@ module.exports = function format(text, opt) {
             } else if (last_keyword == 'AS' && word == ',') {
                 setMargin(0, -3, -3)
                 stack.pop();
-                
+
             } else {
                 formatted.push(' ');
             }
